@@ -2,8 +2,6 @@
 import numpy as np
 
 folder_path = "./cifar-10-batches-py/"
-num_labels = 10
-num_dims = 3072
 def unpickle(file):
     import cPickle
     fo = open(file, 'rb')
@@ -11,27 +9,34 @@ def unpickle(file):
     fo.close()
     return dict
 
+meta_info = unpickle(folder_path + "batches.meta")
+label_dict = meta_info["label_names"]
+num_labels = len(label_dict)
+num_dims = meta_info["num_vis"]
+num_data = meta_info["num_cases_per_batch"]
+
+
+
 batch = unpickle(folder_path + "data_batch_1")
 data = np.array(batch["data"])
-label = np.array(batch["labels"])
+labels = np.array(batch["labels"])
+## Data preprocessing
 
-num_data = len(label1)
-
-print data1.shape
-print label1.shape
-
-mean_images = np.zeros((num_labels, num_dims))
+split_data = [0]*num_labels
 for label_i in range(num_labels):
-    number_occurences = 0
-    for data_i in range(num_data):
-        if(label1[data_i] != label_i):
-            continue
-        number_occurences += 1
-        xi = data1[data_i]
-        mean_images[label_i] += xi
-    mean_images[label_i] = mean_images[label_i]/number_occurences
+    split_data[label_i] = data[labels == label_i]
 
 
-def normalize(data, means):
-    for i in range(num_labels):
+for label_i  in range(num_labels):
+    working_set = split_data[label_i]
+    mean_image = np.zeros(num_dims)
+    for data_i in range(len(working_set)):
+        mean_image += working_set[data_i]
+    mean_image = mean_image/len(working_set)
+    print mean_image
 
+
+
+#def normalize((data,labels), means):
+#    for i in range(num_labels):
+#        if
