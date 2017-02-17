@@ -35,7 +35,15 @@ for label_i  in range(num_labels):
     mean_image = mean_image/len(working_set)
     print mean_image
 
+# calculate cov mat
+cov_mat = []
+for i in range(len(split_data)):
+    d = split_data[i].T
+    c = np.cov(d)
+    assert c.shape == (num_dims, num_dims)
+    cov_mat.append(c)
 
+print cov_mat
 
 #def normalize((data,labels), means):
 #    for i in range(num_labels):
