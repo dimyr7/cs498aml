@@ -4,14 +4,16 @@ import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
-np.set_printoptions(threshold=np.nan)
+#np.set_printoptions(threshold=np.nan)
 folder_path = "./cifar-10-batches-py/"
+num_pcas = 20
 def unpickle(file):
     import cPickle
     fo = open(file, 'rb')
     dict = cPickle.load(fo)
     fo.close()
     return dict
+
 
 def show_pic(data, name):
     pic = np.zeros((32,32,3))
@@ -51,9 +53,15 @@ for label_i  in range(num_labels):
         working_set[data_i] -= mean_image
     cov_mat = np.cov(working_set.T)
     eival, eivec = np.linalg.eig(cov_mat)
+    for data_i in range(len(working_set)):
+        working_set[data_i] = np.dot(eivec.T, working_set[data_i])
+
 
     # Todo make this plot nice looking
     plt.figure()
+    plt.title("Principal components")
+    plt.xlabel("$n^{th}$ greatest eigenvalue")
+    plt.ylabel("Eigenvalue")
     plt.plot(eival)
-    plt.savefig("hello")
+    plt.savefig("PCA" + str(label_i))
     exit(1)
