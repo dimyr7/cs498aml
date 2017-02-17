@@ -42,19 +42,11 @@ for label_i in range(num_labels):
 for label_i  in range(num_labels):
     working_set = split_data[label_i]
     mean_image = np.zeros(num_dims)
-    print(len(working_set))
     for data_i in range(len(working_set)):
         mean_image += working_set[data_i]
     mean_image = mean_image/len(working_set)
-    #print (mean_image/len(working_set))
-    for k  in range(len(mean_image)):
-        if(mean_image[k] > 255):
-            print k
-            print mean_image[k]
-            print "\n"
     show_pic(mean_image, "mean" + str(label_i))
+    for data_i in range(len(working_set)):
+        working_set[data_i] -= mean_image
 
 
-#def normalize((data,labels), means):
-#    for i in range(num_labels):
-#        if
