@@ -33,29 +33,37 @@ num_data = meta_info["num_cases_per_batch"]
 
 
 batch = unpickle(folder_path + "data_batch_1")
-data = np.array(batch["data"], dtype=np.float32)
-labels = np.array(batch["labels"])
+data = np.array(batch["data"], dtype=np.float32)[0:1000]
+labels = np.array(batch["labels"])[0:1000]
 ## Data preprocessing
 split_data = [0]*num_labels
 for label_i in range(num_labels):
     split_data[label_i] = data[labels == label_i]
 
-
+error = [0]*num_labels
 for label_i  in range(num_labels):
+    print "working on " + label_dict[label_i]
     working_set = split_data[label_i]
+    N= len(working_set)
     mean_image = np.zeros(num_dims)
-    for data_i in range(len(working_set)):
+    for data_i in range(N):
         mean_image += working_set[data_i]
-    mean_image = mean_image/len(working_set)
+    mean_image = mean_image/N
     show_pic(mean_image, "mean" + str(label_i))
     # centering the data
-    for data_i in range(len(working_set)):
+    for data_i in range(N):
         working_set[data_i] -= mean_image
     cov_mat = np.cov(working_set.T)
     eival, eivec = np.linalg.eig(cov_mat)
-    for data_i in range(len(working_set)):
+    for data_i in range(N):
         working_set[data_i] = np.dot(eivec.T, working_set[data_i])
+    approx_data = np.zeros(working_set.shape)
+    approx_data[:, 0:num_pcas] = working_set[:, 0:num_pcas]
 
+    error_sum = 0.
+    for data_i in range(N):
+        error_sum += np.dot(approx_data[data_i], working_set[data_i])**2
+    error[label_i] = (error_sum/N)
 
     # Todo make this plot nice looking
     plt.figure()
@@ -64,4 +72,13 @@ for label_i  in range(num_labels):
     plt.ylabel("Eigenvalue")
     plt.plot(eival)
     plt.savefig("PCA" + str(label_i))
-    exit(1)
+
+plt.figure()
+plt.title("Errors as a function of category")
+categories = tuple(label_dict)
+plt.bar(np.arange(len(categories)), error, align='center')
+y_pos = np.arange(len(categories))
+plt.xlabel("Label")
+plt.xticks(y_pos, categories, rotation='vertical')
+plt.ylabel("Error")
+plt.savefig("errors")
