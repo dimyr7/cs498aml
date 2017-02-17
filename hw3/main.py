@@ -49,4 +49,19 @@ for label_i  in range(num_labels):
     for data_i in range(len(working_set)):
         working_set[data_i] -= mean_image
 
+#print (mean_image/len(working_set))
+for k  in range(len(mean_image)):
+    if(mean_image[k] > 255):
+        print k
+        print mean_image[k]
+        print "\n"
+show_pic(mean_image, "mean" + str(label_i))
+
+# calculate cov mat
+cov_mat = []
+for i in range(len(split_data)):
+    d = split_data[i].T
+    c = np.cov(d)
+    assert c.shape == (num_dims, num_dims)
+    cov_mat.append(c)
 
