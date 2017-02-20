@@ -70,12 +70,12 @@ idx = eival.argsort()[::-1]
 eival = eival[idx]
 eivec = eivec[:,idx]
 
-diag = np.array([[eival[0], 0], [0, eigval[1]]])
+diag = np.array([[eival[0], 0], [0, eival[1]]])
 diag = diag**0.5
 
 U = eivec[:2]
 
-V_T = diag * U.T
+V_T =np.dot(diag, U)
 
-plt.plot(V_T[0], V_T[1])
+plt.plot(V_T[0], V_T[1], 'r.')
 plt.show()
