@@ -31,18 +31,27 @@ def get_data(batch_file):
     labels = np.array(batch["labels"])[0:subset]
     return data, labels
 
+num_batches = 5
+mean_batch = [0] * num_batches
+for batch in range(num_batches):
+    print "working on batch " + str(batch)
+    data, labels = get_data("data_batch_" + str(batch+1))
+    split_data = get_split_data(data)
 
-data, labels = get_data("data_batch_1")
-split_data = get_split_data(data)
+    means = np.zeros((num_labels, num_dims))
+    for label_i in range(num_labels):
+        working_set = split_data[label_i]
+        means[label_i] = np.mean(working_set, 0)
+    print means
 
-means = np.zeros((num_labels, num_dims))
-for label_i in range(num_labels):
-    working_set = split_data[label_i]
-    means[label_i] = np.mean(working_set, 0)
+    mean_batch[batch] = means
+#print mean_batch
+means = np.mean(mean_batch, 0)
+#print means
 
 
 W = np.zeros((num_labels,num_labels))
-for i in range(num_labels):
+for i in range(num_labels), 0:
     for j in range(num_labels):
         W[i,j] = means[i].dot(means[j])
 
