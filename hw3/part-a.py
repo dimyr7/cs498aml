@@ -78,7 +78,11 @@ def get_approx_data(working_set, eivec, label_index):
     rotated_working_set = np.zeros(centered_working_set.shape)
     for data_i in range(len(working_set)):
         rotated_working_set[data_i] = np.dot(eivec.T, working_set[data_i])
-    return rotated_working_set[:, 0:num_pcas], approx_data
+
+    approx_data = np.zeros(rotated_working_set.shape)
+    approx_data[:, 0:num_pcas] = rotated_working_set[:, 0:num_pcas]
+
+    return rotated_working_set, approx_data
 
 def get_sorted_eigvec(working_set):
     """
