@@ -26,28 +26,15 @@ def get_data(batch_file):
     labels = np.array(batch["labels"])[0:subset]
     return data, labels
 
-def show_pic(data, name):
-    pic = np.zeros((32,32,3))
-    for i in range(32):
-        for j in range(32):
-            for k in range(3):
-                pic[i,j,k] = data[1024*k + 32*j + i]/256.
-    plt.imsave(fname=name, arr=pic)
-def get_mean(working_set):
-    num_dims = len(working_set[0])
-    mean = np.zeros(num_dims)
-    for d in range(num_dims):
-        mean[d] = np.mean(working_set[:, d])
-    return mean
 
-def get_d(means):
-    N = len(means)
-    d = np.zeros((N, N))
-    for i in range(N):
-        for j in range(N):
-            mean_diff = means[i] - means[j]
-            d[i,j] = np.dot(mean_diff, mean_diff)
-    return d
+def get_sorted_eigvec(working_set):
+    cov_mat = np.cov(working_set.T)
+    eival, eivec = np.linalg.eig(cov_mat)
+
+    eig_idx = eival.argsort()[::-1]
+    eivec = eivec[:, eig_idx]
+
+    return eivec
 
 meta_info = unpickle(folder_path + "batches.meta")
 label_dict = meta_info["label_names"]
@@ -64,18 +51,12 @@ print "===== Calculating means ====="
 for label_i in range(num_labels):
     print "working on " + label_dict[label_i]
     working_set = split_data[label_i]
-    means[label_i] = get_mean(working_set)
-    N = len(working_set)
-    for data_i in range(N):
-        working_set[data_i] -= means[label_i]
-    cov_mat = np.cov(working_set.T)
-    eival, eivec = np.linalg.eig(cov_mat)
+    means[label_i] = np.mean(working_set, 0)
+    centered_working_set = working_set - means[label_i]
+    split_data[label_i] = centered_working_set
 
-    eival = np.real(eival)
-    eig_idx = eival.argsort()[::-1]
-    eival = eival[eig_idx]
-    eivec = eivec[:, eig_idx]
-    PCAs[label_i] = eivec
+
+    PCAs[label_i] = get_sorted_eigvec(centered_working_set)
 
 print "===== Calculating E ====="
 
@@ -87,15 +68,16 @@ for label_i in range(num_labels):
         N = len(working_set)
         print "working on ( " + label_dict[label_i] + " -> " + label_dict[label_j] + " )"
         eivec = PCAs[label_j]
+        rotated_working_set = np.zeros(working_set.shape)
         for data_i in range(N):
-            working_set[data_i] = np.dot(eivec.T, working_set[data_i])
-        approx_data = np.zeros(working_set.shape)
-        approx_data[: , 0:num_pcas] = working_set[:, 0:num_pcas]
+            rotated_working_set[data_i] = np.dot(eivec.T, working_set[data_i])
+        approx_data = np.zeros(rotated_working_set.shape)
+        approx_data[: , 0:num_pcas] = rotated_working_set[:, 0:num_pcas]
 
         error_sum = 0.
         for data_i in range(N):
-            the_diff = (approx_data[data_i] - working_set[data_i])
-            error_diff = (np.linalg.norm(the_diff)/np.linalg.norm(working_set[data_i]))**2
+            the_diff = (approx_data[data_i] - rotated_working_set[data_i])
+            error_diff = (np.linalg.norm(the_diff)/np.linalg.norm(rotated_working_set[data_i]))**2
             error_sum += error_diff
         if(label_i == label_j):
             print (error_sum/N)
@@ -110,20 +92,19 @@ for label_i in range(num_labels):
 W = -0.5 * A.dot(D).dot(A.T)
 
 eival, eivec = np.linalg.eig(W)
-
 idx = eival.argsort()[::-1]
-eival = eival[idx]
 eivec = eivec[:,idx]
 
 eival_r = np.diag(eival[0:2])**0.5
-U_r = eivec[:,0:2]
+Ur_T = eivec[:,0:2].T
 
 #V_T = U_r.dot(eival_r).T
-V_T = eival_r.dot(U_r.T)
+V_T = eival_r.dot(Ur_T)
 
 fig, ax = plt.subplots()
 ax.scatter(V_T[0], V_T[1])
+plt.title("2D Map of Categories using modified PCoA")
 
 for i, txt in enumerate(label_dict):
     ax.annotate(txt, (V_T[0,i], V_T[1,i]))
-plt.show()
+fig.savefig("part-c map.png")
