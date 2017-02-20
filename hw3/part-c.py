@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 folder_path = "./cifar-10-batches-py/"
 
 subset = 10000
+num_pcas = 20
 
 def unpickle(file):
     import cPickle
@@ -58,21 +59,55 @@ data, labels = get_data("data_batch_1")
 split_data = get_split_data(data)
 
 means = np.zeros((num_labels, num_dims))
+PCAs = [0]*num_labels
+print "===== Calculating means ====="
 for label_i in range(num_labels):
+    print "working on " + label_dict[label_i]
     working_set = split_data[label_i]
     means[label_i] = get_mean(working_set)
+    N = len(working_set)
+    for data_i in range(N):
+        working_set[data_i] -= means[label_i]
+    cov_mat = np.cov(working_set.T)
+    eival, eivec = np.linalg.eig(cov_mat)
 
+    eival = np.real(eival)
+    eig_idx = eival.argsort()[::-1]
+    eival = eival[eig_idx]
+    eivec = eivec[:, eig_idx]
+    PCAs[label_i] = eivec
 
-N = num_labels
+print "===== Calculating E ====="
 
-#A = np.identity(N) - 1./N * np.ones((N,N))
-#D = get_d(means)
-#W = -0.5 * A.dot(D).dot(A.T)
+E = np.zeros((num_labels, num_labels))
+# compute E( label_i -> label_j )
+for label_i in range(num_labels):
+    for label_j in range(num_labels):
+        working_set = np.copy(split_data[label_i])
+        N = len(working_set)
+        print "working on ( " + label_dict[label_i] + " -> " + label_dict[label_j] + " )"
+        eivec = PCAs[label_j]
+        for data_i in range(N):
+            working_set[data_i] = np.dot(eivec.T, working_set[data_i])
+        approx_data = np.zeros(working_set.shape)
+        approx_data[: , 0:num_pcas] = working_set[:, 0:num_pcas]
 
-W = np.zeros((N,N))
-for i in range(N):
-    for j in range(N):
-        W[i,j] = means[i].dot(means[j])
+        error_sum = 0.
+        for data_i in range(N):
+            the_diff = (approx_data[data_i] - working_set[data_i])
+            error_diff = (np.linalg.norm(the_diff)/np.linalg.norm(working_set[data_i]))**2
+            error_sum += error_diff
+        if(label_i == label_j):
+            print (error_sum/N)
+        E[label_i, label_j] = (error_sum/N)
+
+print E
+A = np.identity(num_labels) - 1./num_labels * np.ones((num_labels, num_labels))
+D = np.zeros((num_labels, num_labels))
+for label_i in range(num_labels):
+    for label_j in range(num_labels):
+        D[label_i, label_j] = 0.5 * (E[label_i, label_j] + E[label_j, label_i])
+W = -0.5 * A.dot(D).dot(A.T)
 
 eival, eivec = np.linalg.eig(W)
 

@@ -50,7 +50,6 @@ for label_i  in range(num_labels):
     for data_i in range(N):
         mean_image += working_set[data_i]
     mean_image = mean_image/N
-    show_pic(mean_image, "parta.png")
     # centering the data
     for data_i in range(N):
         working_set[data_i] -= mean_image
@@ -61,6 +60,7 @@ for label_i  in range(num_labels):
     eig_idx = eival.argsort()[::-1]
     eival = eival[eig_idx]
     eivec = eivec[:, eig_idx]
+
     for data_i in range(N):
         working_set[data_i] = np.dot(eivec.T, working_set[data_i])
     approx_data = np.zeros(working_set.shape)
