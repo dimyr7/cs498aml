@@ -97,7 +97,7 @@ def get_sorted_eigvec(working_set):
     return eivec
 
 num_batches = 5
-error = [0]*num_labels
+error = np.zeros(num_labels)
 
 # run the code for all the batches
 for batch in range(1, num_batches + 1):
