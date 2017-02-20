@@ -82,6 +82,5 @@ U_r = eivec[:,0:2]
 
 
 V_T = eival_r.dot(U_r.T)
-print V_T.shape
 plt.plot(V_T[0], V_T[1], 'b.')
 plt.show()
