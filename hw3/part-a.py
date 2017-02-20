@@ -56,7 +56,6 @@ for label_i  in range(num_labels):
     cov_mat = np.cov(working_set.T)
     eival, eivec = np.linalg.eig(cov_mat)
 
-    eival = np.real(eival)
     eig_idx = eival.argsort()[::-1]
     eival = eival[eig_idx]
     eivec = eivec[:, eig_idx]
