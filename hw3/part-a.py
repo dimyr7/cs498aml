@@ -4,7 +4,7 @@ import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
-#np.set_printoptions(threshold=np.nan)
+np.set_printoptions(threshold=np.nan)
 folder_path = "./cifar-10-batches-py/"
 num_pcas = 20
 def unpickle(file):
@@ -31,10 +31,11 @@ num_dims = meta_info["num_vis"]
 num_data = meta_info["num_cases_per_batch"]
 
 
-
+subset = 10000
 batch = unpickle(folder_path + "data_batch_1")
-data = np.array(batch["data"], dtype=np.float32)[0:1000]
-labels = np.array(batch["labels"])[0:1000]
+data = np.array(batch["data"], dtype=np.float32)[0:subset]
+labels = np.array(batch["labels"])[0:subset]
+
 ## Data preprocessing
 split_data = [0]*num_labels
 for label_i in range(num_labels):
@@ -49,12 +50,17 @@ for label_i  in range(num_labels):
     for data_i in range(N):
         mean_image += working_set[data_i]
     mean_image = mean_image/N
-    show_pic(mean_image, "mean" + str(label_i))
+    show_pic(mean_image, "parta.png")
     # centering the data
     for data_i in range(N):
         working_set[data_i] -= mean_image
     cov_mat = np.cov(working_set.T)
     eival, eivec = np.linalg.eig(cov_mat)
+
+    eival = np.real(eival)
+    eig_idx = eival.argsort()[::-1]
+    eival = eival[eig_idx]
+    eivec = eivec[:, eig_idx]
     for data_i in range(N):
         working_set[data_i] = np.dot(eivec.T, working_set[data_i])
     approx_data = np.zeros(working_set.shape)
@@ -62,8 +68,11 @@ for label_i  in range(num_labels):
 
     error_sum = 0.
     for data_i in range(N):
-        error_sum += np.dot(approx_data[data_i], working_set[data_i])**2
+        the_diff = (approx_data[data_i] - working_set[data_i])
+        error_diff = (np.linalg.norm(the_diff)/np.linalg.norm(working_set[data_i]))**2
+        error_sum += error_diff
     error[label_i] = (error_sum/N)
+    print "error for " + label_dict[label_i] + ": " + str(error[label_i])
 
     # Todo make this plot nice looking
     plt.figure()
@@ -71,7 +80,7 @@ for label_i  in range(num_labels):
     plt.xlabel("$n^{th}$ greatest eigenvalue")
     plt.ylabel("Eigenvalue")
     plt.plot(eival)
-    plt.savefig("PCA" + str(label_i))
+    plt.show()
 
 plt.figure()
 plt.title("Errors as a function of category")
@@ -81,4 +90,4 @@ y_pos = np.arange(len(categories))
 plt.xlabel("Label")
 plt.xticks(y_pos, categories, rotation='vertical')
 plt.ylabel("Error")
-plt.savefig("errors")
+plt.show()
