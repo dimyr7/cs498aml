@@ -20,6 +20,9 @@ num_dims = meta_info["num_vis"]
 num_data = meta_info["num_cases_per_batch"]
 
 def get_split_data(data):
+    """
+    Splitting the the data based on the category
+    """
     split_data = [0]*num_labels
     for label_i in range(num_labels):
         split_data[label_i] = data[labels == label_i]
@@ -34,6 +37,9 @@ def get_data(batch_file):
 num_batches = 5
 mean_batch = [0] * num_batches
 for batch in range(num_batches):
+    """
+    Getting the mean for each category in each batch
+    """
     print "working on batch " + str(batch)
     data, labels = get_data("data_batch_" + str(batch+1))
     split_data = get_split_data(data)
@@ -45,11 +51,15 @@ for batch in range(num_batches):
     print means
 
     mean_batch[batch] = means
-#print mean_batch
+"""
+Averagin the mean for a category across all batches
+"""
 means = np.mean(mean_batch, 0)
-#print means
 
-
+"""
+As shown in the book, similarity of two vectors can be compututed in either a difference or dot-product way
+This is the dot-product way.
+"""
 W = np.zeros((num_labels,num_labels))
 for i in range(num_labels), 0:
     for j in range(num_labels):
@@ -57,9 +67,15 @@ for i in range(num_labels), 0:
 
 eival, eivec = np.linalg.eig(W)
 
+"""
+Getting the eigenvectors corresponding the the largest eigenvalues
+"""
 idx = eival.argsort()[::-1]
 eivec = eivec[:,idx]
 
+"""
+Since this is a 2-D map, only 2 eigenvalues, eigenvectors will be used
+"""
 eival_r = np.diag(eival[0:2])**0.5
 Ur_T = eivec[:,0:2].T
 

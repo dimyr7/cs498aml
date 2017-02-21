@@ -42,65 +42,93 @@ num_labels = len(label_dict)
 num_dims = meta_info["num_vis"]
 num_data = meta_info["num_cases_per_batch"]
 
-data, labels = get_data("data_batch_1")
-split_data = get_split_data(data)
+num_batches = 2
+Vs = [0] * num_batches
+for batch in range(num_batches):
+    """
+    Working for each batch
+    """
+    print "== working on batch " + str(batch) + " =="
+    data, labels = get_data("data_batch_1")
+    split_data = get_split_data(data)
 
-means = np.zeros((num_labels, num_dims))
-PCAs = [0]*num_labels
-print "===== Calculating means ====="
-for label_i in range(num_labels):
-    print "working on " + label_dict[label_i]
-    working_set = split_data[label_i]
-    means[label_i] = np.mean(working_set, 0)
-    centered_working_set = working_set - means[label_i]
-    split_data[label_i] = centered_working_set
+    """
+    For each category, get all means and PCAs
+    """
+    means = np.zeros((num_labels, num_dims))
+    PCAs = [0]*num_labels
+    print "===== Calculating means ====="
+    for label_i in range(num_labels):
+        print "working on " + label_dict[label_i]
+        working_set = split_data[label_i]
+        means[label_i] = np.mean(working_set, 0)
+        centered_working_set = working_set - means[label_i]
+        split_data[label_i] = centered_working_set
 
 
-    PCAs[label_i] = get_sorted_eigvec(centered_working_set)
+        PCAs[label_i] = get_sorted_eigvec(centered_working_set)
 
-print "===== Calculating E ====="
+    print "===== Calculating E ====="
 
-E = np.zeros((num_labels, num_labels))
-# compute E( label_i -> label_j )
-for label_i in range(num_labels):
-    for label_j in range(num_labels):
-        working_set = np.copy(split_data[label_i])
-        N = len(working_set)
-        print "working on ( " + label_dict[label_i] + " -> " + label_dict[label_j] + " )"
-        eivec = PCAs[label_j]
-        rotated_working_set = np.zeros(working_set.shape)
-        for data_i in range(N):
-            rotated_working_set[data_i] = np.dot(eivec.T, working_set[data_i])
-        approx_data = np.zeros(rotated_working_set.shape)
-        approx_data[: , 0:num_pcas] = rotated_working_set[:, 0:num_pcas]
+    E = np.zeros((num_labels, num_labels))
+    """
+    Entry E[i , j] represents the quantity E(i -> j)
+    """
+    for label_i in range(num_labels):
+        for label_j in range(num_labels):
+            working_set = np.copy(split_data[label_i])
+            N = len(working_set)
+            print "working on ( " + label_dict[label_i] + " -> " + label_dict[label_j] + " )"
+            """
+            Using data with label i but the PCAs from label j
+            """
+            eivec = PCAs[label_j]
+            rotated_working_set = np.zeros(working_set.shape)
+            for data_i in range(N):
+                rotated_working_set[data_i] = np.dot(eivec.T, working_set[data_i])
+            approx_data = np.zeros(rotated_working_set.shape)
+            approx_data[: , 0:num_pcas] = rotated_working_set[:, 0:num_pcas]
 
-        error_sum = 0.
-        for data_i in range(N):
-            the_diff = (approx_data[data_i] - rotated_working_set[data_i])
-            error_diff = (np.linalg.norm(the_diff)/np.linalg.norm(rotated_working_set[data_i]))**2
-            error_sum += error_diff
-        if(label_i == label_j):
-            print (error_sum/N)
-        E[label_i, label_j] = (error_sum/N)
+            error_sum = 0.
+            for data_i in range(N):
+                the_diff = (approx_data[data_i] - rotated_working_set[data_i])
+                error_diff = (np.linalg.norm(the_diff)/np.linalg.norm(rotated_working_set[data_i]))**2
+                error_sum += error_diff
+            if(label_i == label_j):
+                print (error_sum/N)
+            E[label_i, label_j] = (error_sum/N)
 
-print E
-A = np.identity(num_labels) - 1./num_labels * np.ones((num_labels, num_labels))
-D = np.zeros((num_labels, num_labels))
-for label_i in range(num_labels):
-    for label_j in range(num_labels):
-        D[label_i, label_j] = 0.5 * (E[label_i, label_j] + E[label_j, label_i])
-W = -0.5 * A.dot(D).dot(A.T)
+    print E
+    """
+    Forming matrices A, D, W as in the book
+    """
+    A = np.identity(num_labels) - 1./num_labels * np.ones((num_labels, num_labels))
+    D = np.zeros((num_labels, num_labels))
+    for label_i in range(num_labels):
+        for label_j in range(num_labels):
+            """
+            E(A -> A) will not be 0 because using only 20 prinicipal compoents will result in atleast a small amount of error
+            """
+            D[label_i, label_j] = 0.5 * (E[label_i, label_j] + E[label_j, label_i])
+    W = -0.5 * A.dot(D).dot(A.T)
 
-eival, eivec = np.linalg.eig(W)
-idx = eival.argsort()[::-1]
-eivec = eivec[:,idx]
+    """
+    Continuing process from the book
+    """
+    eival, eivec = np.linalg.eig(W)
+    idx = eival.argsort()[::-1]
+    eivec = eivec[:,idx]
 
-eival_r = np.diag(eival[0:2])**0.5
-Ur_T = eivec[:,0:2].T
+    eival_r = np.diag(eival[0:2])**0.5
+    Ur_T = eivec[:,0:2].T
 
-#V_T = U_r.dot(eival_r).T
-V_T = eival_r.dot(Ur_T)
+    V_T = eival_r.dot(Ur_T)
+    Vs[batch] = V_T
 
+"""
+Average the coordinates from 5 different batches
+"""
+V_T = np.mean(Vs, 0)
 fig, ax = plt.subplots()
 ax.scatter(V_T[0], V_T[1])
 plt.title("2D Map of Categories using modified PCoA")
