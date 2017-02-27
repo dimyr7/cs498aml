@@ -12,7 +12,7 @@ library(readr)
 # CS 498 AML Homework 4
 ## Question 7.10
 ```{r, message=FALSE}
-physical <- read_csv("~/Downloads/physical.csv")
+physical <- read_csv("./q2.csv")
 ```
 **(a)**
 ```{r}
