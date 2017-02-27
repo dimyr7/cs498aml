@@ -1,0 +1,21 @@
+--
+output:
+  html_document:
+    theme: readable
+    toc: yes
+---
+```{r setup, echo=FALSE, message=FALSE, warning=FALSE}
+options(scipen=1, digits=4, width=80)
+library(faraway)
+library(readr)
+```
+# CS 498 AML Homework 4
+## Question 7.9
+**(a)**
+```{r}
+physical <- read_csv("~/Downloads/physical.csv")
+model <- lm(Mass ~ 1 + Fore + Bicep + Chest + Neck + Shoulder + Waist + Height + Calf + Thigh + Head, data=physical)
+c((2,2))
+summary(model)
+plot(model)
+```
