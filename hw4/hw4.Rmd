@@ -126,7 +126,7 @@ abalone <- read_csv("./q3.csv")
 **(a)**
 
 ```{r}
-abalone.lm <- lm(age ~ 1 + length + diameter + height + whole_weight + shuckled_weight + viscera_weight + shell_weight, data = abalone)
+abalone.lm <- lm(age ~ 1 + length + diameter + height + whole_weight + shuckled_weight + viscera_weight + shell_weight + rings, data = abalone)
 plot(abalone.lm$fitted,
 	 abalone.lm$residuals,
 	 main="Residuls vs Fitted",
@@ -144,7 +144,7 @@ abalone.with_gender[abalone.with_gender["sex"] == "M",]["sex"]<-"1"
 abalone.with_gender[abalone.with_gender["sex"] == "I",]["sex"]<-"0"
 abalone.with_gender["sex"] = as.numeric(unlist(abalone.with_gender["sex"]))
 
-abalone.lm_gender <- lm(age ~ 1 + sex + length + diameter + height + whole_weight + shuckled_weight + viscera_weight + shell_weight, data = abalone.with_gender)
+abalone.lm_gender <- lm(age ~ 1 + sex + length + diameter + height + whole_weight + shuckled_weight + viscera_weight + shell_weight + rings, data = abalone.with_gender)
 plot(abalone.lm_gender$fitted,
 	 abalone.lm_gender$residuals,
 	 main="Residuls vs Fitted",
@@ -157,7 +157,7 @@ plot(abalone.lm_gender$fitted,
 **(c)**
 
 ```{r}
-abalone.lm_log <- lm(log(age) ~ 1 + length + diameter + height + whole_weight + shuckled_weight + viscera_weight + shell_weight, data = abalone)
+abalone.lm_log <- lm(log(age) ~ 1 + length + diameter + height + whole_weight + shuckled_weight + viscera_weight + shell_weight + rings, data = abalone)
 plot(abalone.lm_log$fitted,
 	 abalone.lm_log$residuals,
 	 main="Residuls vs Fitted",
@@ -169,7 +169,7 @@ plot(abalone.lm_log$fitted,
 **(d)**
 
 ```{r}
-abalone.lm_gender_log <- lm(log(age) ~ 1 + sex + length + diameter + height + whole_weight + shuckled_weight + viscera_weight + shell_weight, data = abalone.with_gender)
+abalone.lm_gender_log <- lm(log(age) ~ 1 + sex + length + diameter + height + whole_weight + shuckled_weight + viscera_weight + shell_weight + rings, data = abalone.with_gender)
 plot(abalone.lm_gender_log$fitted,
 	 abalone.lm_gender_log$residuals,
 	 main="Residuls vs Fitted",
