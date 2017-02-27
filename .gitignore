@@ -3,7 +3,6 @@ hw1/*
 hw2/*
 hw3/cifar-10-batches-py/*
 *.html
-*.csv
 
 template.Rmd
 
