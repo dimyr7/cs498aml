@@ -12,7 +12,7 @@ library(readr)
 # CS 498 AML Homework 4
 
 ## Question 7.9
-```{r}
+```{r, message=FALSE}
 # preparing data
 brunhild <- read_csv("./q1.csv")
 ```
@@ -70,10 +70,12 @@ The range of residuals is much smaller in the the log-log scale model which indi
 
 ## Question 7.10
 ```{r, message=FALSE}
+# preparing data
 physical <- read_csv("./q2.csv")
 ```
 **(a)**
 ```{r}
+# Making original model
 physical.lm <- lm(Mass ~ 1 + Fore + Bicep + Chest + Neck + Shoulder + Waist + Height + Calf + Thigh + Head, data=physical)
 physical.scale = c(min(physical.lm$residuals), max(physical.lm$residuals))
 summary(physical.lm)
@@ -87,15 +89,20 @@ plot(physical.lm$fitted,
 **(b)**
 From the residuals vs fitted graph, the errors seem to be about normally shaped with a mean of 0.
 ```{r}
+# Making cube root model
 physical.lm_trans <- lm((Mass)^(1/3) ~ 1 + Fore + Bicep + Chest + Neck + Shoulder + Waist + Height + Calf + Thigh + Head, data=physical)
 summary(physical.lm_trans)
+
+# Comparing residuals of two models
 plot(physical.lm_trans$fitted,
 	 physical.lm_trans$residuals,
 	 main="Residuls vs Fitted",
 	 sub="transformed data",
 	 xlab="Fitted values",
 	 ylab="Residuals")
+```
 
+```{r, echo=FALSE}
 plot(physical.lm_trans$fitted,
 	 physical.lm_trans$residuals,
 	 main="Residuls vs Fitted",
@@ -108,3 +115,65 @@ plot(physical.lm_trans$fitted,
 **(c)**
 
 The residuals of the transformed model but on the scale of the orignal model, are really close to 0. Therefore the transformed model is clearly better.
+
+
+## Question 7.11
+```{r, message=FALSE}
+# preparing data
+abalone <- read_csv("./q3.csv")
+```
+
+**(a)**
+
+```{r}
+abalone.lm <- lm(age ~ 1 + length + diameter + height + whole_weight + shuckled_weight + viscera_weight + shell_weight, data = abalone)
+plot(abalone.lm$fitted,
+	 abalone.lm$residuals,
+	 main="Residuls vs Fitted",
+	 sub="original data",
+	 xlab="Fitted values",
+	 ylab="Residuals")
+```
+
+**(b)**
+
+```{r, message=FALSE}
+abalone.with_gender <- read_csv("./q3.csv")
+abalone.with_gender[abalone.with_gender["sex"] == "F",]["sex"]<-"-1"
+abalone.with_gender[abalone.with_gender["sex"] == "M",]["sex"]<-"1"
+abalone.with_gender[abalone.with_gender["sex"] == "I",]["sex"]<-"0"
+abalone.with_gender["sex"] = as.numeric(unlist(abalone.with_gender["sex"]))
+
+abalone.lm_gender <- lm(age ~ 1 + sex + length + diameter + height + whole_weight + shuckled_weight + viscera_weight + shell_weight, data = abalone.with_gender)
+plot(abalone.lm_gender$fitted,
+	 abalone.lm_gender$residuals,
+	 main="Residuls vs Fitted",
+	 sub="data with gender",
+	 xlab="Fitted values",
+	 ylab="Residuals")
+```
+
+
+**(c)**
+
+```{r}
+abalone.lm_log <- lm(log(age) ~ 1 + length + diameter + height + whole_weight + shuckled_weight + viscera_weight + shell_weight, data = abalone)
+plot(abalone.lm_log$fitted,
+	 abalone.lm_log$residuals,
+	 main="Residuls vs Fitted",
+	 sub="log scale, no gender",
+	 xlab="Fitted values",
+	 ylab="Residuals")
+```
+
+**(d)**
+
+```{r}
+abalone.lm_gender_log <- lm(log(age) ~ 1 + sex + length + diameter + height + whole_weight + shuckled_weight + viscera_weight + shell_weight, data = abalone.with_gender)
+plot(abalone.lm_gender_log$fitted,
+	 abalone.lm_gender_log$residuals,
+	 main="Residuls vs Fitted",
+	 sub="log scale, with gender",
+	 xlab="Fitted values",
+	 ylab="Residuals")
+```
