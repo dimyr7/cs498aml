@@ -177,3 +177,34 @@ plot(abalone.lm_gender_log$fitted,
 	 xlab="Fitted values",
 	 ylab="Residuals")
 ```
+
+**(f)**
+
+```{r}
+library(glmnet)
+abalone <- read_csv("./q3.csv")
+abalone.with_gender <- abalone
+
+x.without_gender <- model.matrix(log(age) ~ 1 + length + diameter + height + whole_weight + shuckled_weight + viscera_weight + shell_weight + rings, data = abalone)[, -1]
+
+abalone.with_gender <- abalone
+abalone.with_gender[abalone.with_gender["sex"] == "F",]["sex"]<-"-1"
+abalone.with_gender[abalone.with_gender["sex"] == "M",]["sex"]<-"1"
+abalone.with_gender[abalone.with_gender["sex"] == "I",]["sex"]<-"0"
+abalone.with_gender["sex"] = as.numeric(unlist(abalone.with_gender["sex"]))
+
+x.with_gender <- model.matrix(log(age) ~ 1 + sex + length + diameter + height + whole_weight + shuckled_weight + viscera_weight + shell_weight + rings, data = abalone.with_gender)
+
+y <- abalone$age
+
+g.with_gender <- glmnet(x.with_gender, y)
+g.without_gender <- glmnet(x.without_gender, y)
+
+cvmfit.with_gender = cv.glmnet(x.with_gender, y)
+cvmfit.without_gender = cv.glmnet(x.without_gender, y)
+
+plot(g.with_gender, main="Coef with Gender")
+plot(cvmfit.with_gender, main="Error with Gender")
+plot(g.without_gender, main="Coef without Gender")
+plot(cvmfit.without_gender, main="Error without Gender")
+```
