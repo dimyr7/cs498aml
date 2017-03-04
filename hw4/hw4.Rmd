@@ -231,6 +231,7 @@ library(glmnet)
 ```{r, warning=FALSE}
 y <- abalone$age
 
+# without gender, original scale
 reg.lm <- model.matrix(age ~ 1 + length + diameter + height + whole_weight + shuckled_weight + viscera_weight + shell_weight + rings, data = abalone)
 g.lm <- glmnet(reg.lm, y)
 c.lm <- cv.glmnet(reg.lm, y)
@@ -238,21 +239,21 @@ par(mfrow=c(1,2))
 plot(g.lm, main="Coef without gender, original scale")
 plot(c.lm, main="Error without gender, original scale")
 
-
+# with gender, original scale
 reg.gender <- model.matrix(age ~ 1 + sex + length + diameter + height + whole_weight + shuckled_weight + viscera_weight + shell_weight + rings, data = abalone.with_gender)
 g.gender <- glmnet(reg.gender, y)
 c.gender <- cv.glmnet(reg.gender, y)
 plot(g.gender, main="Coef with gender, original scale")
 plot(c.gender, main="Error with gender, original scale")
 
-
+# without gender, log scale
 reg.log<- model.matrix(log(age) ~ 1 + length + diameter + height + whole_weight + shuckled_weight + viscera_weight + shell_weight + rings, data = abalone)
 g.log <- glmnet(reg.log, y)
 c.log <- cv.glmnet(reg.log, y)
 plot(g.log, main="Coef without gender, log scale")
 plot(c.log, main="Error without gender, log scale")
 
-
+# with gender, log scale
 reg.log_gender <- model.matrix(log(age) ~ 1 + sex + length + diameter + height + whole_weight + shuckled_weight + viscera_weight + shell_weight + rings, data = abalone.with_gender)
 g.log_gender <- glmnet(reg.log_gender, y)
 c.log_gender <- cv.glmnet(reg.log_gender, y)
