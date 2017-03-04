@@ -1,4 +1,4 @@
---
+---
 output:
   html_document:
     theme: readable
@@ -86,7 +86,9 @@ plot(physical.lm$fitted,
 	 xlab="Fitted values",
 	 ylab="Residuals")
 ```
+
 **(b)**
+
 From the residuals vs fitted graph, the errors seem to be about normally shaped with a mean of 0.
 ```{r}
 # Making cube root model
@@ -130,7 +132,7 @@ abalone.lm <- lm(age ~ 1 + length + diameter + height + whole_weight + shuckled_
 plot(abalone.lm$fitted,
 	 abalone.lm$residuals,
 	 main="Residuls vs Fitted",
-	 sub="original data",
+	 sub="without gender",
 	 xlab="Fitted values",
 	 ylab="Residuals")
 ```
@@ -148,7 +150,7 @@ abalone.lm_gender <- lm(age ~ 1 + sex + length + diameter + height + whole_weigh
 plot(abalone.lm_gender$fitted,
 	 abalone.lm_gender$residuals,
 	 main="Residuls vs Fitted",
-	 sub="data with gender",
+	 sub="with gender",
 	 xlab="Fitted values",
 	 ylab="Residuals")
 ```
@@ -161,7 +163,7 @@ abalone.lm_log <- lm(log(age) ~ 1 + length + diameter + height + whole_weight + 
 plot(abalone.lm_log$fitted,
 	 abalone.lm_log$residuals,
 	 main="Residuls vs Fitted",
-	 sub="log scale, no gender",
+	 sub="log scale, without gender",
 	 xlab="Fitted values",
 	 ylab="Residuals")
 ```
@@ -178,33 +180,45 @@ plot(abalone.lm_gender_log$fitted,
 	 ylab="Residuals")
 ```
 
+**(e)**
+From the residuals vs fitted graph, it is clear that using rings as a predictors decreases the range of residuals by several orders of magnitude (both using and excluding gender). Also using gender also eliminates most of the positive residuals without effecting the negative residuals.
+
+However, using an extra predictor for age doesn't really give such a big benefit. With more predictors, there is a higher chance of overfitting and the simpler model (tends) to be less accurate but tends to be better.
+
+We would chose the model without gender predicting the age, NOT the log of age because it minimizes residuals and is less likely to overfit.
 **(f)**
 
-```{r}
+```{r, message=FALSE}
 library(glmnet)
-abalone <- read_csv("./q3.csv")
-abalone.with_gender <- abalone
+```
 
-x.without_gender <- model.matrix(log(age) ~ 1 + length + diameter + height + whole_weight + shuckled_weight + viscera_weight + shell_weight + rings, data = abalone)[, -1]
-
-abalone.with_gender <- abalone
-abalone.with_gender[abalone.with_gender["sex"] == "F",]["sex"]<-"-1"
-abalone.with_gender[abalone.with_gender["sex"] == "M",]["sex"]<-"1"
-abalone.with_gender[abalone.with_gender["sex"] == "I",]["sex"]<-"0"
-abalone.with_gender["sex"] = as.numeric(unlist(abalone.with_gender["sex"]))
-
-x.with_gender <- model.matrix(log(age) ~ 1 + sex + length + diameter + height + whole_weight + shuckled_weight + viscera_weight + shell_weight + rings, data = abalone.with_gender)
-
+```{r}
 y <- abalone$age
 
-g.with_gender <- glmnet(x.with_gender, y)
-g.without_gender <- glmnet(x.without_gender, y)
+reg.lm <- model.matrix(age ~ 1 + length + diameter + height + whole_weight + shuckled_weight + viscera_weight + shell_weight + rings, data = abalone)
+g.lm <- glmnet(reg.lm, y)
+c.lm <- cv.glmnet(reg.lm, y)
+plot(g.lm, main="Coef without gender, original scale")
+plot(c.lm, main="Error without gender, original scale")
 
-cvmfit.with_gender = cv.glmnet(x.with_gender, y)
-cvmfit.without_gender = cv.glmnet(x.without_gender, y)
 
-plot(g.with_gender, main="Coef with Gender")
-plot(cvmfit.with_gender, main="Error with Gender")
-plot(g.without_gender, main="Coef without Gender")
-plot(cvmfit.without_gender, main="Error without Gender")
+reg.gender <- model.matrix(age ~ 1 + sex + length + diameter + height + whole_weight + shuckled_weight + viscera_weight + shell_weight + rings, data = abalone.with_gender)
+g.gender <- glmnet(reg.gender, y)
+c.gender <- cv.glmnet(reg.gender, y)
+plot(g.gender, main="Coef with gender, original scale")
+plot(c.gender, main="Error with gender, original scale")
+
+
+reg.log<- model.matrix(log(age) ~ 1 + length + diameter + height + whole_weight + shuckled_weight + viscera_weight + shell_weight + rings, data = abalone)
+g.log <- glmnet(reg.log, y)
+c.log <- cv.glmnet(reg.log, y)
+plot(g.log, main="Coef without gender, log scale")
+plot(c.log, main="Error without gender, log scale")
+
+
+reg.log_gender <- model.matrix(log(age) ~ 1 + sex + length + diameter + height + whole_weight + shuckled_weight + viscera_weight + shell_weight + rings, data = abalone.with_gender)
+g.log_gender <- glmnet(reg.log_gender, y)
+c.log_gender <- cv.glmnet(reg.log_gender, y)
+plot(g.log_gender, main="Coef with gender, log scale")
+plot(c.log_gender, main="Error with gender, log scale")
 ```
