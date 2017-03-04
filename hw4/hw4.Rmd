@@ -8,6 +8,10 @@ output:
 options(scipen=1, digits=4, width=80)
 library(faraway)
 library(readr)
+library(caret)
+library(data.table)
+library(klaR)
+library(lattice)
 ```
 # CS 498 AML Homework 4
 
@@ -24,9 +28,10 @@ plot(log(brunhild$Hours),
 	 log(brunhild$Sulfate),
 	 main="Regression and points",
 	 sub="log log scale",
-	 xlab="Predictors",
-	 ylab="Results")
+	 xlab="Predictors (Log_Hours)",
+	 ylab="Results (Log_Sulfate)")
 abline(brunhild.lm_log, col="red")
+summary(brunhild.lm_log) 
 ```
 
 
@@ -42,30 +47,55 @@ plot(brunhild$Hours,
 	 xlab="Predictors",
 	 ylab="Results")
 abline(brunhild.lm, col="red")
+summary(brunhild.lm)
 ```
+
+Rather than stopping here we perform some investigations using residual diagnostics to determine whether the various assumptions that underpin linear regression are reasonable for our data or if there is evidence to suggest that additional variables are required in the model or some other alterations to identify a better description of the variables that determine how weight changes.
 
 **(c)**
 ```{r}
-# Comparing residuaks of the two models
-plot(brunhild.lm_log$fitted,
-	 brunhild.lm_log$residuals,
-	 main="Residuals vs Fitted",
-	 sub="log log scale",
-	 xlab="Fitted values",
-	 ylab="Residuals")
+# Comparing residuals of the two models
 
-plot(brunhild.lm$fitted,
-	 brunhild.lm$residuals,
-	 main="Residuals vs Fitted",
-	 sub="orignal data",
-	 xlab="Fitted values",
-	 ylab="Residuals")
+# residual against fitted values in log-log coordinates
+xyplot(resid(bruhnilda.lm) ~ fitted(bruhnilda.lm),
+      xlab = "Fitted Values",
+      ylab = "Residuals",
+      main = "Residual Diagnostic Plot",
+      panel = function(x, y, ...)
+      {
+        panel.grid(h = -1, v = -1)
+        panel.abline(h = 0)
+        panel.xyplot(x, y, ...)
+      }
+)
+
+# residual against fitted values in original coordinates
+xyplot(resid(bruhnilda_orig.lm) ~ fitted(bruhnilda_orig.lm),
+       xlab = "Fitted Values",
+       ylab = "Residuals",
+       main = "Residual Diagnostic Plot",
+       panel = function(x, y, ...)
+       {
+         panel.grid(h = -1, v = -1)
+         panel.abline(h = 0)
+         panel.xyplot(x, y, ...)
+       }
+)
+
+
+#two windows will open, please look at both 
 
 ```
 
 **(d)**
 
+It is clear that a non-linear regression technique was crucial here to allow a linear regression model to be computed given the "exponentiality" of the data. By doing the nonlinear transformation changes (log-log scale), we have effectively increased the linear relationships between variables and, thus, changed the correlation between variables. 
+
 The range of residuals is much smaller in the the log-log scale model which indicates that it is better. Also the residuals in the original model-data model clearly resemble a pattern. The residuals of the log-log look closer to a normal distribution. This also indicates that the log-log model is better.
+
+It is  worth mentioning that thanks to the previously observed "summary", we can clearly notice that our Rsquared has effectively increased from 0.565 to 0.983, suggesting that our log scale transformation has indeed been successful and presents itself as a better model. 
+
+A final, crucial observation is that athough our scale is now much much smaller for the residual diagnostic plot concerning the log transofrmation, we can still see a clear pattern, if this were to be taken in full consideration, we would have to point out that non-random patterns in a residual plot suggest a departure from linearity in the data being plotted. Hence, exploring some other non linear transformations can be considered although the current transformed model suggests itself as being sufficiently good.
 
 
 ## Question 7.10
@@ -84,7 +114,8 @@ plot(physical.lm$fitted,
 	 main="Residuls vs Fitted",
 	 sub="original data",
 	 xlab="Fitted values",
-	 ylab="Residuals")
+	 ylab="Residuals",
+   abline(h = 0))
 ```
 **(b)**
 From the residuals vs fitted graph, the errors seem to be about normally shaped with a mean of 0.
@@ -99,7 +130,8 @@ plot(physical.lm_trans$fitted,
 	 main="Residuls vs Fitted",
 	 sub="transformed data",
 	 xlab="Fitted values",
-	 ylab="Residuals")
+	 ylab="Residuals",
+	 abline(h = 0))
 ```
 
 ```{r, echo=FALSE}
@@ -109,7 +141,8 @@ plot(physical.lm_trans$fitted,
 	 sub="transformed data, original scale",
 	 xlab="Fitted values",
 	 ylab="Residuals",
-	 ylim=physical.scale)
+	 ylim=physical.scale, 
+	 abline(h = 0))
 ```
 
 **(c)**
@@ -132,7 +165,8 @@ plot(abalone.lm$fitted,
 	 main="Residuls vs Fitted",
 	 sub="original data",
 	 xlab="Fitted values",
-	 ylab="Residuals")
+	 ylab="Residuals",
+	 abline(h = 0))
 ```
 
 **(b)**
@@ -150,7 +184,8 @@ plot(abalone.lm_gender$fitted,
 	 main="Residuls vs Fitted",
 	 sub="data with gender",
 	 xlab="Fitted values",
-	 ylab="Residuals")
+	 ylab="Residuals",
+	 abline(h = 0))
 ```
 
 
@@ -163,7 +198,8 @@ plot(abalone.lm_log$fitted,
 	 main="Residuls vs Fitted",
 	 sub="log scale, no gender",
 	 xlab="Fitted values",
-	 ylab="Residuals")
+	 ylab="Residuals",
+	 abline(h = 0))
 ```
 
 **(d)**
@@ -175,7 +211,8 @@ plot(abalone.lm_gender_log$fitted,
 	 main="Residuls vs Fitted",
 	 sub="log scale, with gender",
 	 xlab="Fitted values",
-	 ylab="Residuals")
+	 ylab="Residuals",
+	 abline(h = 0))
 ```
 
 **(f)**
