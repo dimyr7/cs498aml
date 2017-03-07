@@ -60,6 +60,7 @@ xyplot(resid(brunhild.lm_log) ~ fitted(brunhild.lm_log),
       xlab = "Fitted Values",
       ylab = "Residuals",
       main = "Residual Diagnostic Plot",
+	  sub = "log log scale",
       panel = function(x, y, ...)
       {
         panel.grid(h = -1, v = -1)
@@ -73,6 +74,7 @@ xyplot(resid(brunhild.lm) ~ fitted(brunhild.lm),
        xlab = "Fitted Values",
        ylab = "Residuals",
        main = "Residual Diagnostic Plot",
+	   sub = "log log scale",
        panel = function(x, y, ...)
        {
          panel.grid(h = -1, v = -1)
