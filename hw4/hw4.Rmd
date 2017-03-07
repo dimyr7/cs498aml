@@ -224,6 +224,7 @@ From the residuals vs fitted graph, it is clear that using rings as a predictors
 However, using an extra predictor for age doesn't really give such a big benefit. With more predictors, there is a higher chance of overfitting and the simpler model (tends) to be less accurate but tends to be better.
 
 We would chose the model without gender predicting the age, NOT the log of age because it minimizes residuals and is less likely to overfit.
+
 **(f)**
 
 ```{r, message=FALSE}
@@ -267,3 +268,5 @@ plotres(g.log_gender)
 plot(g.log_gender, main="Coef with gender, log scale")
 plot(c.log_gender, main="Error with gender, log scale")
 ```
+
+From the plots, we can see that the error we are getting for all of the data points, with and without doing the log transformation, are pretty low. Espicially, for the best lambda, 0.1031. Since we use regularization to avoid overfitting and and the large size of the Beta vector, doing the regularization will definitley imporove the regression.
