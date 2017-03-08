@@ -7,9 +7,104 @@ output:
 ```{r setup, echo=FALSE, message=FALSE, warning=FALSE}
 options(scipen=1, digits=4, width=80)
 library(faraway)
+library(readr)
+library(caret)
+library(klaR)
+library(lattice)
 ```
 # CS 498 AML Homework 5
 ## Question 1 - Music
+```{r, message=FALSE}
+music <- read_csv('./music.csv')
+music["latitude"] <- music["latitude"] + 90
+music["longitude"] <- music["longitude"] + 180
+```
+**(a)** Fit a linear model
+Latitude:
+```{r}
+lat.lm <- lm(latitude ~ . - longitude, data = music)
+print(c("The R^2 value is", summary(lat.lm)$r.squared))
+#summary(lat.lm)
+xyplot(lat.lm$residuals ~ lat.lm$fitted,
+      xlab = "Fitted Values",
+      ylab = "Residuals",
+      main = "Predicting Latitude",
+      panel = function(x, y, ...)
+      {
+        panel.grid(h = -1, v = -1)
+        panel.abline(h = 0)
+        panel.xyplot(x, y, ...)
+      }
+)
+```
+
+Longiutude:
+```{r}
+lon.lm <- lm(longitude ~ . - latitude, data = music)
+print(c("The R^2 value is", summary(lon.lm)$r.squared))
+#summary(lon.lm)
+xyplot(lon.lm$residuals ~ lon.lm$fitted,
+      xlab = "Fitted Values",
+      ylab = "Residuals",
+      main = "Predicting Longitude",
+      panel = function(x, y, ...)
+      {
+        panel.grid(h = -1, v = -1)
+        panel.abline(h = 0)
+        panel.xyplot(x, y, ...)
+      }
+)
+```
+
+**(b)** Box-Cox
+Latitude:
+```{r}
+lat.bc_info = boxcox(lat.lm, lambda=seq(-1,5))
+lat.bc_lambda = lat.bc_info$x[which.max(lat.bc_info$y)]
+lat.lm_lambda = lm(latitude^lat.bc_lambda ~ . - longitude, data=music)
+print(c("The R^2 value is", summary(lat.lm_lambda)$r.squared))
+print(c("The Box-Cox optimal lambda is", lat.bc_lambda))
+#summary(lat.lm)
+xyplot(lat.lm_lambda$residuals ~ lat.lm_lambda$fitted,
+      xlab = "Fitted Values",
+      ylab = "Residuals",
+      main = "Predicting Latitude",
+      sub = toString(c("power", lat.bc_lambda)),
+      panel = function(x, y, ...)
+      {
+        panel.grid(h = -1, v = -1)
+        panel.abline(h = 0)
+        panel.xyplot(x, y, ...)
+      }
+)
+```
+
+The Box-Cox transformation helps tremendously with the lattitude. This is evident because the residuals have dropped from about $30$ to $10^{-7}$
+
+
+Longitude:
+```{r}
+lon.bc_info = boxcox(lon.lm)
+lon.bc_lambda = lon.bc_info$x[which.max(lon.bc_info$y)]
+lon.lm_lambda = lm(longitude^lon.bc_lambda ~ . - latitude, data=music)
+print(c("The R^2 value is", summary(lon.lm_lambda)$r.squared))
+print(c("The Box-Cox optimal lambda is", lon.bc_lambda))
+xyplot(lon.lm_lambda$residuals ~ lon.lm_lambda$fitted,
+      xlab = "Fitted Values",
+      ylab = "Residuals",
+      main = "Predicting Longitude",
+      sub = toString(c("power", lon.bc_lambda)),
+      panel = function(x, y, ...)
+      {
+        panel.grid(h = -1, v = -1)
+        panel.abline(h = 0)
+        panel.xyplot(x, y, ...)
+      }
+)
+```
+
+The Box-Cox transformation does not help becuase the residuals are not really effected. Since the optimal $\lambda$ found by Box-Cox is about $1$, we don't expect this to do a lot.
+
 
 ## Question 2 - Taiwan
 
