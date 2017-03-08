@@ -1,0 +1,16 @@
+---
+output:
+  html_document:
+    theme: readable
+    toc: yes
+---
+```{r setup, echo=FALSE, message=FALSE, warning=FALSE}
+options(scipen=1, digits=4, width=80)
+library(faraway)
+```
+# CS 498 AML Homework 5
+## Question 1 - Music
+
+## Question 2 - Taiwan
+
+## Question 3 - Cancer
