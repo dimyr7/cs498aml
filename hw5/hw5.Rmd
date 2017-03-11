@@ -11,45 +11,37 @@ library(readr)
 library(caret)
 library(klaR)
 library(lattice)
+library(glmnet)
+library(plotmo)
 ```
+
 # CS 498 AML Homework 5
 ## Question 1 - Music
 ```{r, message=FALSE}
 music <- read_csv('./music.csv')
+num_features = dim(music)[2]-2
 music["latitude"] <- music["latitude"] + 90
 music["longitude"] <- music["longitude"] + 180
 ```
+
+
+### Latitude
 **(a)** Fit a linear model
-Latitude:
+
 ```{r}
 lat.lm <- lm(latitude ~ . - longitude, data = music)
+```
+
+```{r, echo=FALSE}
 print(c("The R^2 value is", summary(lat.lm)$r.squared))
-#summary(lat.lm)
 xyplot(lat.lm$residuals ~ lat.lm$fitted,
       xlab = "Fitted Values",
       ylab = "Residuals",
       main = "Predicting Latitude",
-      panel = function(x, y, ...)
+	  sub  = "Original Scale",
+	  panel = function(x, y, ...)
       {
-        panel.grid(h = -1, v = -1)
-        panel.abline(h = 0)
-        panel.xyplot(x, y, ...)
-      }
-)
-```
-
-Longiutude:
-```{r}
-lon.lm <- lm(longitude ~ . - latitude, data = music)
-print(c("The R^2 value is", summary(lon.lm)$r.squared))
-#summary(lon.lm)
-xyplot(lon.lm$residuals ~ lon.lm$fitted,
-      xlab = "Fitted Values",
-      ylab = "Residuals",
-      main = "Predicting Longitude",
-      panel = function(x, y, ...)
-      {
-        panel.grid(h = -1, v = -1)
+		panel.grid(h = -1, v = -1)
         panel.abline(h = 0)
         panel.xyplot(x, y, ...)
       }
@@ -57,14 +49,16 @@ xyplot(lon.lm$residuals ~ lon.lm$fitted,
 ```
 
 **(b)** Box-Cox
-Latitude:
+
 ```{r}
 lat.bc_info = boxcox(lat.lm, lambda=seq(-1,5))
 lat.bc_lambda = lat.bc_info$x[which.max(lat.bc_info$y)]
 lat.lm_lambda = lm(latitude^lat.bc_lambda ~ . - longitude, data=music)
+```
+
+```{r, echo=FALSE}
 print(c("The R^2 value is", summary(lat.lm_lambda)$r.squared))
 print(c("The Box-Cox optimal lambda is", lat.bc_lambda))
-#summary(lat.lm)
 xyplot(lat.lm_lambda$residuals ~ lat.lm_lambda$fitted,
       xlab = "Fitted Values",
       ylab = "Residuals",
@@ -81,12 +75,90 @@ xyplot(lat.lm_lambda$residuals ~ lat.lm_lambda$fitted,
 
 The Box-Cox transformation helps tremendously with the lattitude. This is evident because the residuals have dropped from about $30$ to $10^{-7}$
 
+**(c)** Regularization
+```{r}
+# Lasso L1
+lat.l1 = glmnet(as.matrix(music[1:num_features]),
+				as.matrix(music["latitude"]^lat.bc_lambda),
+				alpha=0)
+lat.l1_cv = cv.glmnet(as.matrix(music[1:num_features]),
+				as.matrix(music["latitude"]^lat.bc_lambda),
+				alpha=0)
+plotres(lat.l1)
+par(mfrow=c(1,2))
+plot(lat.l1, main="Coef without gender, original scale")
+plot(lat.l1_cv, main="Error without gender, original scale")
+```
 
-Longitude:
+```{r}
+xyplot(lat.l1$residuals ~ lat.l1$fitted,
+      xlab = "Fitted Values",
+      ylab = "Residuals",
+      main = "Predicting Latitude",
+      sub = toString(c("Lasso L1", "power", lat.bc_lambda)),
+      panel = function(x, y, ...)
+      {
+        panel.grid(h = -1, v = -1)
+        panel.abline(h = 0)
+        panel.xyplot(x, y, ...)
+      }
+)
+```
+
+```{r}
+# Ridge L2
+lat.l2 = glmnet(as.matrix(music[1:num_features]),
+				as.matrix(music["latitude"]^lat.bc_lambda),
+				alpha=1)
+```
+
+```{r, echo=FALSE}
+xyplot(lat.l2$residuals ~ lat.l2$fitted,
+      xlab = "Fitted Values",
+      ylab = "Residuals",
+      main = "Predicting Latitude",
+      sub = toString(c("Ridge L2", "power", lat.bc_lambda)),
+      panel = function(x, y, ...)
+      {
+        panel.grid(h = -1, v = -1)
+        panel.abline(h = 0)
+        panel.xyplot(x, y, ...)
+      }
+)
+```
+
+
+
+### Longitude
+**(a)** Fit a linear model
+```{r}
+lon.lm <- lm(longitude ~ . - latitude, data = music)
+```
+
+```{r, echo=FALSE}
+print(c("The R^2 value is", summary(lon.lm)$r.squared))
+xyplot(lon.lm$residuals ~ lon.lm$fitted,
+      xlab = "Fitted Values",
+      ylab = "Residuals",
+      main = "Predicting Longitude",
+      panel = function(x, y, ...)
+      {
+        panel.grid(h = -1, v = -1)
+        panel.abline(h = 0)
+        panel.xyplot(x, y, ...)
+      }
+)
+```
+
+**(b)** Box-Cox
+
 ```{r}
 lon.bc_info = boxcox(lon.lm)
 lon.bc_lambda = lon.bc_info$x[which.max(lon.bc_info$y)]
 lon.lm_lambda = lm(longitude^lon.bc_lambda ~ . - latitude, data=music)
+```
+
+```{r, echo=FALSE}
 print(c("The R^2 value is", summary(lon.lm_lambda)$r.squared))
 print(c("The Box-Cox optimal lambda is", lon.bc_lambda))
 xyplot(lon.lm_lambda$residuals ~ lon.lm_lambda$fitted,
@@ -104,6 +176,51 @@ xyplot(lon.lm_lambda$residuals ~ lon.lm_lambda$fitted,
 ```
 
 The Box-Cox transformation does not help becuase the residuals are not really effected. Since the optimal $\lambda$ found by Box-Cox is about $1$, we don't expect this to do a lot.
+
+**(c)** Regularization
+```{r}
+# Lasso L1
+lon.l1 = glmnet(as.matrix(music[1:num_features]),
+				as.matrix(music["longitude"]^lon.bc_lambda),
+				alpha=0)
+```
+
+```{r, echo=FALSE}
+xyplot(lon.l1$residuals ~ lat.l1$fitted,
+	   xlab = "Fitted Values",
+	   ylab = "Residuals",
+	   main = "Predicting Longitude",
+	   sub = toString(c("Lasso L1", "power", lon.bc_lambda)),
+	   panel = function(x,y,...)
+	   {
+		panel.grid(h=-1, v=-1)
+	   	panel.abline(h = 0)
+		panel.xyplot(x,y,...)
+	   }
+)
+```
+
+```{r}
+# Ridge L2
+lon.l2 = glmnet(as.matrix(music[1:num_features]),
+				as.matrix(music["longitude"]^lon.bc_lambda),
+				alpha=1)
+```
+
+```{r, echo=FALSE}
+xyplot(lon.l2$residuals ~ lon.l2$fitted,
+	   xlab = "Fitted Values",
+	   ylab = "Residuals",
+	   main = "Predicting Longitude",
+	   sub = toString(c("Ridge L2", "power", lon.bc_lambda)),
+	   panel = function(x,y,...)
+	   {
+		panel.grid(h = -1, v = -1)
+	   	panel.abline(h = 0)
+		panel.xyplot(x,y,...)
+	   }
+)
+```
 
 
 ## Question 2 - Taiwan
