@@ -24,7 +24,7 @@ num_features = dim(music)[2]-2
 music["latitude"] <- music["latitude"] + 90
 music["longitude"] <- music["longitude"] + 180
 ```
-
+A small angle transformation was required here so as to allow us to use the box-cox transformation correctly.
 
 ### Latitude
 **(a)** Fit a linear model
@@ -38,13 +38,15 @@ print(c("The R^2 value is", summary(lat.lm)$r.squared))
 par(mfrow=c(2,2))
 plot(lat.lm)
 ```
+A natural measure of the goodness of a regression is what percentage of the variance of y it explains. Essentially, the Rsquared value tells us how well the regression explains the training data. Good predictions result in high values of Rsquared, and a perfect model will have Rsquared = 1 (which doesn’t usually happen). In this case our Rsquared estimation is rather low (approx. 0.29) , explicitely telling us that we should consider a better model or perhaps a transformation. Indeed, The Box-Cox transformation is a method that can search for a transformation of the dependent variable that improves the regression.The method uses a one-parameter family of transformations, with parameter λ, then searches for the best value of this parameter using maximum likelihood. One searches for a value of λ that makes residuals look most like a normal distribution.
 
 **(b)** Box-Cox
 
 ```{r}
 lat.bc_info = boxcox(lat.lm, lambda=seq(-1,5))
-lat.bc_lambda = lat.bc_info$x[which.max(lat.bc_info$y)]
+lat.bc_lambda = lat.bc_info$x[which.max(lat.bc_info$y)] #selecting best lambda
 lat.lm_lambda = lm( (latitude^lat.bc_lambda-1)/lat.bc_lambda ~ . - longitude, data=music)
+# now let us see if we have improved our model and Rsquared value
 ```
 
 ```{r, echo=FALSE}
@@ -56,6 +58,7 @@ plot(lat.lm_lambda)
 print(c("The new R^2 value is", summary(lat.lm_lambda)$r.squared))
 print(c("The Box-Cox optimal lambda is", lat.bc_lambda))
 ```
+Moreover, we have a new $R^2$ value that has increased to approx. $0.32$ which clearly demonstrates an improvement from the original $0.29$. Hence we will be using the box-cox model for the rest of the excercise. We now proced to regularization, and more specifically Ridge and Lasso regularizations, we want to see if we can still improve things at this point.
 
 **(c)** Regularization
 ```{r}
