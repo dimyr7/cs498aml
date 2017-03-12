@@ -168,6 +168,9 @@ lat.l2 = glmnet(as.matrix(music[1:num_features]),
 lat.l2_cv = cv.glmnet(as.matrix(music[1:num_features]),
 				as.matrix(music["longitude"]^lat.bc_lambda),
 				alpha=0)
+
+print(c("the minimum  lambda is :", log(lat.l1_cv$lambda.min)))
+
 plotres(lat.l2)
 par(mfrow=c(1,2))
 plot(lat.l2, sub="Coef L2")
@@ -182,13 +185,24 @@ lat.l1 = glmnet(as.matrix(music[1:num_features]),
 lat.l1_cv = cv.glmnet(as.matrix(music[1:num_features]),
 				as.matrix(music["longitude"]^lat.bc_lambda),
 				alpha=1)
+
+print(c("the minimum  lambda is :", log(lat.l1_cv$lambda.min)))
+
 plotres(lat.l1)
 par(mfrow=c(1,2))
 plot(lat.l1, sub="coef L1")
 plot(lat.l1_cv, sub="Error L1")
 ```
 
+```{r}
 
+
+plot(log(lat.l1_cv$lambda),lat.l1_cv$cvm,pch=19,col="red",xlab="log(Lambda)",ylab=lat.l1_cv$name)
+points(log(lat.l2_cv$lambda),lat.l2_cv$cvm,pch=19,col="grey")
+legend("topleft",legend=c("alpha= 1 L1","alpha= 1 L2"),pch=19,col=c("red","grey"))
+
+
+```
 
 
 ## Question 2 - Taiwan
