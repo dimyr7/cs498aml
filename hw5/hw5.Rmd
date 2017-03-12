@@ -52,9 +52,6 @@ lat.lm_lambda = lm( (latitude^lat.bc_lambda-1)/lat.bc_lambda ~ . - longitude, da
 ```{r, echo=FALSE}
 par(mfrow=c(2,2))
 plot(lat.lm_lambda)
-```
-
-```{r, echo=FALSE}
 print(c("The new R^2 value is", summary(lat.lm_lambda)$r.squared))
 print(c("The Box-Cox optimal lambda is", lat.bc_lambda))
 ```
@@ -152,11 +149,17 @@ lon.l2_cv = cv.glmnet(as.matrix(music[1:num_features]),
 ```
 
 ```{r, echo=FALSE}
+print(c("the minimum  lambda is :", log(lat.l1_cv$lambda.min)))
 par(mfrow=c(1,2))
 plot(lon.l2, xvar="lambda")
 plot(lon.l2_cv)
 ```
 
+```{r}
+plot(log(lat.l1_cv$lambda),lat.l1_cv$cvm,pch=19,col="red",xlab="log(Lambda)",ylab=lat.l1_cv$name)
+points(log(lat.l2_cv$lambda),lat.l2_cv$cvm,pch=19,col="grey")
+legend("topleft",legend=c("alpha= 1 L1","alpha= 1 L2"),pch=19,col=c("red","grey"))
+```
 
 
 ## Question 2 - Taiwan
