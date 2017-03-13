@@ -119,7 +119,7 @@ lon.lm <- lm(longitude ~ . - latitude, data = music)
 ```
 ```{r lon_lm_info, echo=FALSE}
 print(c("The R^2 value is", summary(lon.lm)$r.squared))
-xyplot(lon.lm$residuals~ lon.lm$fitted.values,
+xyplot(lon.lm$residuals ~ lon.lm$fitted.values,
       xlab = "Fitted Values",
       ylab = "Residuals",
       main = "Residual Diagnostic Plot",
@@ -138,12 +138,12 @@ xyplot(lon.lm$residuals~ lon.lm$fitted.values,
 ```{r lon_bc}
 lon.bc_info = boxcox(lon.lm)
 lon.bc_lambda = lon.bc_info$x[which.max(lon.bc_info$y)]
-lon.lm_lambda = lm((longitude^lon.bc_lambda-1)/lon.bc_lambda ~ . - latitude, data=music)
+lon.lm_lambda = lm(longitude^lon.bc_lambda ~ . - latitude, data=music)
 ```
 ```{r lon_bc_info, echo=FALSE}
 print(c("The new R^2 value is", summary(lon.lm_lambda)$r.squared))
 print(c("The Box-Cox optimal lambda is", lon.bc_lambda))
-xyplot((lon.lm$residuals)^(1/lon.bc_lambda) ~ (lon.lm$fitted.values)^(1/lon.bc_lambda),
+xyplot((lon.lm_lambda$residuals)^(1/lon.bc_lambda) ~ (lon.lm_lambda$fitted.values)^(1/lon.bc_lambda),
       xlab = "Fitted Values",
       ylab = "Residuals",
       main = "Residual Diagnostic Plot",
@@ -230,20 +230,23 @@ plot(default.lm_cv.elastic,sub="Elasticnet")
 ```{r read_cancer, message=FALSE}
 cancer <- read_csv('./cancer.csv', col_names = FALSE)
 cancer.num_features = dim(cancer)[2]-1
-```
+colnames(cancer)[2001] <- 'state'
 
-```{r}
-cancer.lm_cv_auc <- cv.glmnet(model.matrix(~., data=cancer[1:cancer.num_features]),
-						as.matrix(cancer[cancer.num_features+1]),
+# AUC
+cancer.lm_cv.lasso.auc <- cv.glmnet(model.matrix(~ ., data=cancer[1:cancer.num_features]),
+						cancer$state,
 						family="binomial",
-						alpha=1,
-						type.measure ="auc",
-						nfolds=5)
-cancer.lm_cv_deviance <- cv.glmnet(model.matrix(~., data=cancer[1:cancer.num_features]),
-						as.matrix(cancer[cancer.num_features+1]),
+						type.measure = "auc",
+						alpha=1, nfolds=5)
+plot(cancer.lm_cv.lasso.auc)
+
+# Deviance
+cancer.lm_cv.lasso.deviance <- cv.glmnet(model.matrix(~ ., data=cancer[1:cancer.num_features]),
+						cancer$state,
 						family="binomial",
 						type.measure = "deviance",
 						alpha=1)
-plot(cancer.lm_cv_auc, sub="auc")
-plot(cancer.lm_cv_deviance, sub="deviance")
+plot(cancer.lm_cv.lasso.deviance)
 ```
+
+Both measures uses about the same $\lambda$ Regarding the number of genes, we realized that the deviance measure reported a slightly higher number than AUC when we ran it multiple times. AUC uses about 10 genes, but deviance uses about 15-20 genes. 
