@@ -18,9 +18,9 @@ library(gridExtra)
 
 # CS 498 AML Homework 5
 ## Question 1 - Music
-```{r, message=FALSE}
+```{r read_music, message=FALSE}
 music <- read_csv('./music.csv')
-num_features = dim(music)[2]-2
+music.num_features = dim(music)[2]-2
 music["latitude"] <- music["latitude"] + 90
 music["longitude"] <- music["longitude"] + 180
 ```
@@ -29,11 +29,11 @@ A small angle transformation was required here so as to allow us to use the box-
 ### Latitude
 **(a)** Fit a linear model
 
-```{r}
+```{r lat_lm}
 lat.lm <- lm(latitude ~ . - longitude, data = music)
 ```
 
-```{r, echo=FALSE}
+```{r lat_lm_info, echo=FALSE}
 print(c("The R^2 value is", summary(lat.lm)$r.squared))
 par(mfrow=c(2,2))
 plot(lat.lm)
@@ -42,14 +42,14 @@ A natural measure of the goodness of a regression is what percentage of the vari
 
 **(b)** Box-Cox
 
-```{r}
+```{r lat_bc}
 lat.bc_info = boxcox(lat.lm, lambda=seq(-1,5))
 lat.bc_lambda = lat.bc_info$x[which.max(lat.bc_info$y)] #selecting best lambda
 lat.lm_lambda = lm( (latitude^lat.bc_lambda-1)/lat.bc_lambda ~ . - longitude, data=music)
 # now let us see if we have improved our model and Rsquared value
 ```
 
-```{r, echo=FALSE}
+```{r lat_bc_info, echo=FALSE}
 par(mfrow=c(2,2))
 plot(lat.lm_lambda)
 print(c("The new R^2 value is", summary(lat.lm_lambda)$r.squared))
@@ -58,34 +58,32 @@ print(c("The Box-Cox optimal lambda is", lat.bc_lambda))
 Moreover, we have a new $R^2$ value that has increased to approx. $0.32$ which clearly demonstrates an improvement from the original $0.29$. Hence we will be using the box-cox model for the rest of the excercise. We now proced to regularization, and more specifically Ridge and Lasso regularizations, we want to see if we can still improve things at this point.
 
 **(c)** Regularization
-```{r}
+```{r lat_lasso}
 # Lasso L1
-lat.l1 = glmnet(as.matrix(music[1:num_features]),
+lat.l1 = glmnet(as.matrix(music[1:music.num_features]),
 				as.matrix(music["latitude"]^lat.bc_lambda),
 				alpha=1)
-lat.l1_cv = cv.glmnet(as.matrix(music[1:num_features]),
+lat.l1_cv = cv.glmnet(as.matrix(music[1:music.num_features]),
 				as.matrix(music["latitude"]^lat.bc_lambda),
 				alpha=1)
 ```
-
-```{r, echo=FALSE}
+```{r lat_lasso_info, echo=FALSE}
 par(mfrow=c(1,2))
 plot(lat.l1, xvar="lambda")
 plot(lat.l1_cv)
 ```
 
 
-```{r}
+```{r lat_ridge}
 # Ridge L2
-lat.l2 = glmnet(as.matrix(music[1:num_features]),
+lat.l2 = glmnet(as.matrix(music[1:music.num_features]),
 				as.matrix(music["latitude"]^lat.bc_lambda),
 				alpha=0)
-lat.l2_cv = cv.glmnet(as.matrix(music[1:num_features]),
+lat.l2_cv = cv.glmnet(as.matrix(music[1:music.num_features]),
 				as.matrix(music["latitude"]^lat.bc_lambda),
 				alpha=0)
 ```
-
-```{r, echo=FALSE}
+```{r lat_ridge_info, echo=FALSE}
 par(mfrow=c(1,2))
 plot(lat.l2, xvar="lambda")
 plot(lat.l2_cv)
@@ -94,11 +92,10 @@ plot(lat.l2_cv)
 
 ### Longitude
 **(a)** Fit a linear model
-```{r}
+```{r lon_lm}
 lon.lm <- lm(longitude ~ . - latitude, data = music)
 ```
-
-```{r, echo=FALSE}
+```{r lon_lm_info, echo=FALSE}
 print(c("The R^2 value is", summary(lon.lm)$r.squared))
 par(mfrow=c(2,2))
 plot(lon.lm)
@@ -106,49 +103,46 @@ plot(lon.lm)
 
 **(b)** Box-Cox
 
-```{r}
+```{r lon_bc}
 lon.bc_info = boxcox(lon.lm)
 lon.bc_lambda = lon.bc_info$x[which.max(lon.bc_info$y)]
 lon.lm_lambda = lm((longitude^lon.bc_lambda-1)/lon.bc_lambda ~ . - latitude, data=music)
 ```
-
-```{r, echo=FALSE}
+```{r lon_bc_info, echo=FALSE}
 print(c("The new R^2 value is", summary(lon.lm_lambda)$r.squared))
 print(c("The Box-Cox optimal lambda is", lon.bc_lambda))
 par(mfrow=c(2,2))
-plot(lon.lm)
+plot(lon.lm_lambda)
 ```
 
 The Box-Cox transformation does not help becuase the residuals are not really effected. Since the optimal $\lambda$ found by Box-Cox is about $1$, we don't expect this to do a lot.
 
 **(c)** Regularization
-```{r}
+```{r lon_lasso}
 # Lasso L1
-lon.l1 = glmnet(as.matrix(music[1:num_features]),
+lon.l1 = glmnet(as.matrix(music[1:music.num_features]),
 				as.matrix(music["longitude"]^lon.bc_lambda),
 				alpha=1)
-lon.l1_cv = cv.glmnet(as.matrix(music[1:num_features]),
+lon.l1_cv = cv.glmnet(as.matrix(music[1:music.num_features]),
 				as.matrix(music["longitude"]^lon.bc_lambda),
 				alpha=1)
 ```
-
-```{r, echo=FALSE}
+```{r lon_lasso_info, echo=FALSE}
 par(mfrow=c(1,2))
 plot(lon.l1, xvar="lambda")
 plot(lon.l1_cv)
 ```
 
-```{r}
+```{r lon_ridge}
 # Ridge L2
-lon.l2 = glmnet(as.matrix(music[1:num_features]),
+lon.l2 = glmnet(as.matrix(music[1:music.num_features]),
 				as.matrix(music["longitude"]^lon.bc_lambda),
 				alpha=0)
-lon.l2_cv = cv.glmnet(as.matrix(music[1:num_features]),
+lon.l2_cv = cv.glmnet(as.matrix(music[1:music.num_features]),
 				as.matrix(music["longitude"]^lon.bc_lambda),
 				alpha=0)
 ```
-
-```{r, echo=FALSE}
+```{r lon_ridge_info, echo=FALSE}
 print(c("the minimum  lambda is :", log(lat.l1_cv$lambda.min)))
 par(mfrow=c(1,2))
 plot(lon.l2, xvar="lambda")
@@ -162,9 +156,41 @@ legend("topleft",legend=c("alpha= 1 L1","alpha= 1 L2"),pch=19,col=c("red","grey"
 ```
 
 
-## Question 2 - Taiwan
-```{r, message=FALSE}
-taiwan <- read_csv('./taiwan.csv')
+## Question 2 - Default
+```{r read_default, message=FALSE}
+default <- read_csv('./default.csv')
+default.num_features = dim(default)[2]-1
+```
+**(a)** Fit a linear model
+```{r default_lm}
+default.lm_cv <- cv.glmnet(as.matrix(default[1:default.num_features]),
+						as.matrix(default["default"]),
+						type.measure = "auc",
+						family="binomial")
+default.lm_cv.lasso <- cv.glmnet(as.matrix(default[1:default.num_features]),
+						as.matrix(default["default"]),
+						family="binomial",
+						type.measure = "auc",
+						alpha=1)
+default.lm_cv.ridge <- cv.glmnet(as.matrix(default[1:default.num_features]),
+						as.matrix(default["default"]),
+						family="binomial",
+						type.measure = "auc",
+						alpha=0)
+default.lm_cv.elastic<- cv.glmnet(as.matrix(default[1:default.num_features]),
+						as.matrix(default["default"]),
+						family="binomial",
+						type.measure = "auc",
+						alpha=0.5)
+plot(default.lm_cv)
+plot(default.lm_cv.lasso, sub="Lasso")
+plot(default.lm_cv.ridge, sub="Ridge")
+plot(default.lm_cv.elastic,sub="Elasticnet")
 ```
 
+
 ## Question 3 - Cancer
+```{r read_cancer, message=FALSE}
+cancer <- read_csv('./cancer.csv')
+cancer.num_features = dim(cancer)[2]-1
+```
