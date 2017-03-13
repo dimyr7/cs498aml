@@ -88,27 +88,39 @@ Looking at the residuals vs fitted graph (transformed back to the orignal power)
 We expect the residuals to be normally distirbuted, this should make us question out assumption of homoscedasticity. 
 
 **(c)** Regularization
-```{r lat_lasso}
+```{r lat_reg}
 # Lasso L1
 lat.l1 = cv.glmnet(as.matrix(music[1:music.num_features]),
 				as.matrix(music["latitude"]^lat.bc_lambda),
 				alpha=1)
-```
-```{r lat_lasso_info, echo=FALSE}
-print(c("The minimum log lambda is", log(lat.l1$lambda.min)))
-plot(lat.l1)
-```
-
-
-```{r lat_ridge}
 # Ridge L2
 lat.l2 = cv.glmnet(as.matrix(music[1:music.num_features]),
-				as.matrix(music["latitude"]^lat.bc_lambda),
-				alpha=0)
+				   as.matrix(music["latitude"]^lat.bc_lambda),
+				   alpha=0)
 ```
+
+
 ```{r lat_ridge_info, echo=FALSE}
-print(c("The minimum log lambda is", log(lat.l2$lambda.min)))
-plot(lat.l2)
+print(c("The minimum log lambda for Lasso L1 is", log(lat.l1$lambda.min)))
+print(c("The minimum log lambda for Ridge L2 is", log(lat.l2$lambda.min)))
+plot(lat.l1, main="Lasso L1")
+plot(lat.l2, main="Ridge L2")
+```
+
+```{r, eval=FALSE}
+plot(log(lat.l1$lambda),
+	 (lat.l1$cvm)^(1/lat.bc_lambda),
+	 pch=19,
+	 col="red",
+	 xlab="log(Lambda)",
+	 ylab="CVM",
+	 main="MSE as function of log(Lambda)",
+	 sub = toString(c("Lasso L1", "Power scale", lat.bc_lambda)))
+points(log(lat.l2$lambda),
+	   (lat.l2$cvm)^(1/lat.bc_lambda),
+	   pch=19,
+	   col="blue")
+legend("bottomright", legend=c("alpha=1 L1","alpha=0 L2"), pch=10, col=c("red", "blue"))
 ```
 
 
@@ -162,31 +174,24 @@ Since the optimal $\lambda$ found by Box-Cox is about $1$, we don't expect this 
 Since $\lambda$ is about $1$, we will use the simpler model.
 
 **(c)** Regularization
-```{r lon_lasso}
+```{r lon_reg}
 # Lasso L1
 lon.l1 = cv.glmnet(as.matrix(music[1:music.num_features]),
 				as.matrix(music["longitude"]),
 				alpha=1)
-```
-
-
-```{r lon_lasso_info, echo=FALSE}
-print(c("The minimum log lambda is", log(lat.l1$lambda.min)))
-plot(lon.l1)
-```
-
-```{r lon_ridge}
 # Ridge L2
 lon.l2 = cv.glmnet(as.matrix(music[1:music.num_features]),
-				as.matrix(music["longitude"]^lon.bc_lambda),
+				as.matrix(music["longitude"]),
 				alpha=0)
 ```
-```{r lon_ridge_info, echo=FALSE}
-print(c("the minimum log lambda is :", log(lat.l2$lambda.min)))
-plot(lon.l2)
+```{r lon_reg_info, echo=FALSE}
+print(c("The minimum log(lambda) for Lasso L1 is", log(lon.l1$lambda.min)))
+print(c("the minimum log(lambda) for Ridge L2 is", log(lon.l2$lambda.min)))
+plot(lon.l1, main="Lasso L1")
+plot(lon.l2, main="Ridge L2")
 ```
 
-```{r}
+```{r, eval=FALSE}
 plot(log(lat.l1$lambda),lat.l1$cvm,pch=19,col="red",xlab="log(Lambda)",ylab=lat.l1$name)
 points(log(lat.l2$lambda),lat.l2$cvm,pch=19,col="grey")
 legend("topleft",legend=c("alpha= 1 L1","alpha= 1 L2"),pch=19,col=c("red","grey"))
@@ -194,12 +199,12 @@ legend("topleft",legend=c("alpha= 1 L1","alpha= 1 L2"),pch=19,col=c("red","grey"
 
 
 ## Question 2 - Default
-```{r read_default, message=FALSE}
+```{r read_defult, message=FALSE}
 default <- read_csv('./default.csv')
 default.num_features = dim(default)[2]-1
 ```
 **(a)** Fit a linear model
-```{r default_lm}
+```{r default_lm, eval=FALSE}
 default.lm_cv <- cv.glmnet(as.matrix(default[1:default.num_features]),
 						as.matrix(default["default"]),
 						type.measure = "auc",
