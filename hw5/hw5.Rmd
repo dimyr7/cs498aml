@@ -191,6 +191,25 @@ plot(default.lm_cv.elastic,sub="Elasticnet")
 
 ## Question 3 - Cancer
 ```{r read_cancer, message=FALSE}
-cancer <- read_csv('./cancer.csv')
+cancer <- read_csv('./cancer.csv', col_names = FALSE)
 cancer.num_features = dim(cancer)[2]-1
+colnames(cancer)[2001] <- 'state'
+
+# AUC
+cancer.lm_cv.lasso.auc <- cv.glmnet(model.matrix(~ ., data=cancer[1:cancer.num_features]),
+						cancer$state,
+						family="binomial",
+						type.measure = "auc",
+						alpha=1, nfolds=5)
+plot(cancer.lm_cv.lasso.auc)
+
+# Deviance
+cancer.lm_cv.lasso.deviance <- cv.glmnet(model.matrix(~ ., data=cancer[1:cancer.num_features]),
+						cancer$state,
+						family="binomial",
+						type.measure = "deviance",
+						alpha=1)
+plot(cancer.lm_cv.lasso.deviance)
 ```
+
+Both measures uses about the same lambda. Regarding the number of genes, we realized that the deviance measure reported a slightly higher number than AUC when we ran it multiple times. AUC uses about 10 genes, but deviance uses about 15-20 genes. 
