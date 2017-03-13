@@ -24,7 +24,7 @@ music.num_features = dim(music)[2]-2
 music["latitude"] <- music["latitude"] + 90
 music["longitude"] <- music["longitude"] + 180
 ```
-A small angle transformation was required here so as to allow us to use the box-cox transformation correctly.
+A small angle transformation was required here to make the $latitude$ and $longitude$ values non-negative. Box-Cox requires the response variables to be non-negative.
 
 ### Latitude
 **(a)** Fit a linear model
@@ -35,58 +35,80 @@ lat.lm <- lm(latitude ~ . - longitude, data = music)
 
 ```{r lat_lm_info, echo=FALSE}
 print(c("The R^2 value is", summary(lat.lm)$r.squared))
-par(mfrow=c(2,2))
-plot(lat.lm)
+xyplot(lat.lm$residuals~ lat.lm$fitted.values,
+      xlab = "Fitted Values",
+      ylab = "Residuals",
+      main = "Residual Diagnostic Plot",
+	  sub = "Original scale",
+      panel = function(x, y, ...)
+      {
+        panel.grid(h = -1, v = -1)
+        panel.abline(h = 0)
+        panel.xyplot(x, y, ...)
+      }
+)
 ```
-A natural measure of the goodness of a regression is what percentage of the variance of y it explains. Essentially, the Rsquared value tells us how well the regression explains the training data. Good predictions result in high values of Rsquared, and a perfect model will have Rsquared = 1 (which doesn’t usually happen). In this case our Rsquared estimation is rather low (approx. 0.29) , explicitely telling us that we should consider a better model or perhaps a transformation. Indeed, The Box-Cox transformation is a method that can search for a transformation of the dependent variable that improves the regression.The method uses a one-parameter family of transformations, with parameter λ, then searches for the best value of this parameter using maximum likelihood. One searches for a value of λ that makes residuals look most like a normal distribution.
+
+The $R^2$ value tells us how well the regression explains the training data. 
+In this case our $R^2$ estimation is rather low (approx. $0.29$), explicitely telling us that we should consider a better model or perhaps a transformation. 
+Indeed, The Box-Cox transformation is a method that can search for a power transformation of the dependent variable that improves the regression.
+One searches for a value of $\lambda$ that makes residuals look most like a normal distribution.
 
 **(b)** Box-Cox
 
 ```{r lat_bc}
 lat.bc_info = boxcox(lat.lm, lambda=seq(-1,5))
 lat.bc_lambda = lat.bc_info$x[which.max(lat.bc_info$y)] #selecting best lambda
-lat.lm_lambda = lm( (latitude^lat.bc_lambda-1)/lat.bc_lambda ~ . - longitude, data=music)
+lat.lm_lambda = lm( latitude^lat.bc_lambda ~ . - longitude, data=music)
 # now let us see if we have improved our model and Rsquared value
 ```
+Above, different powers ($\lambda$) are teseted on the response variable and the one with the highest log-likelihood is chosen.
 
 ```{r lat_bc_info, echo=FALSE}
-par(mfrow=c(2,2))
-plot(lat.lm_lambda)
+xyplot((lat.lm_lambda$residuals)^(1/lat.bc_lambda) ~ (lat.lm_lambda$fitted.values)^(1/lat.bc_lambda),
+      xlab = "Fitted Values",
+      ylab = "Residuals",
+      main = "Residual Diagnostic Plot",
+	  sub = toString(c("Power scale", lat.bc_lambda)),
+      panel = function(x, y, ...)
+      {
+        panel.grid(h = -1, v = -1)
+        panel.abline(h = 0)
+        panel.xyplot(x, y, ...)
+      }
+)
 print(c("The new R^2 value is", summary(lat.lm_lambda)$r.squared))
 print(c("The Box-Cox optimal lambda is", lat.bc_lambda))
 ```
-Moreover, we have a new $R^2$ value that has increased to approx. $0.32$ which clearly demonstrates an improvement from the original $0.29$. Hence we will be using the box-cox model for the rest of the excercise. We now proced to regularization, and more specifically Ridge and Lasso regularizations, we want to see if we can still improve things at this point.
+Moreover, we have a new $R^2$ value that has increased to approx. $0.32$ which clearly demonstrates an improvement from the original $0.29$. Hence we will be using the Box-Cox model for the rest of the excercise.
+This is a significant enough increase in accuracy to justify using a more complex model.
+We now proced to regularization, and more specifically Ridge and Lasso regularizations, we want to see if we can still improve things at this point.
+
+Looking at the residuals vs fitted graph (transformed back to the orignal power), there appears to be a pattern. 
+We expect the residuals to be normally distirbuted, this should make us question out assumption of homoscedasticity. 
 
 **(c)** Regularization
 ```{r lat_lasso}
 # Lasso L1
-lat.l1 = glmnet(as.matrix(music[1:music.num_features]),
-				as.matrix(music["latitude"]^lat.bc_lambda),
-				alpha=1)
-lat.l1_cv = cv.glmnet(as.matrix(music[1:music.num_features]),
+lat.l1 = cv.glmnet(as.matrix(music[1:music.num_features]),
 				as.matrix(music["latitude"]^lat.bc_lambda),
 				alpha=1)
 ```
 ```{r lat_lasso_info, echo=FALSE}
-par(mfrow=c(1,2))
-plot(lat.l1, xvar="lambda")
-plot(lat.l1_cv)
+print(c("The minimum log lambda is", log(lat.l1$lambda.min)))
+plot(lat.l1)
 ```
 
 
 ```{r lat_ridge}
 # Ridge L2
-lat.l2 = glmnet(as.matrix(music[1:music.num_features]),
-				as.matrix(music["latitude"]^lat.bc_lambda),
-				alpha=0)
-lat.l2_cv = cv.glmnet(as.matrix(music[1:music.num_features]),
+lat.l2 = cv.glmnet(as.matrix(music[1:music.num_features]),
 				as.matrix(music["latitude"]^lat.bc_lambda),
 				alpha=0)
 ```
 ```{r lat_ridge_info, echo=FALSE}
-par(mfrow=c(1,2))
-plot(lat.l2, xvar="lambda")
-plot(lat.l2_cv)
+print(c("The minimum log lambda is", log(lat.l2$lambda.min)))
+plot(lat.l2)
 ```
 
 
@@ -97,8 +119,18 @@ lon.lm <- lm(longitude ~ . - latitude, data = music)
 ```
 ```{r lon_lm_info, echo=FALSE}
 print(c("The R^2 value is", summary(lon.lm)$r.squared))
-par(mfrow=c(2,2))
-plot(lon.lm)
+xyplot(lon.lm$residuals~ lon.lm$fitted.values,
+      xlab = "Fitted Values",
+      ylab = "Residuals",
+      main = "Residual Diagnostic Plot",
+	  sub = "Original scale",
+      panel = function(x, y, ...)
+      {
+        panel.grid(h = -1, v = -1)
+        panel.abline(h = 0)
+        panel.xyplot(x, y, ...)
+      }
+)
 ```
 
 **(b)** Box-Cox
@@ -111,47 +143,52 @@ lon.lm_lambda = lm((longitude^lon.bc_lambda-1)/lon.bc_lambda ~ . - latitude, dat
 ```{r lon_bc_info, echo=FALSE}
 print(c("The new R^2 value is", summary(lon.lm_lambda)$r.squared))
 print(c("The Box-Cox optimal lambda is", lon.bc_lambda))
-par(mfrow=c(2,2))
-plot(lon.lm_lambda)
+xyplot((lon.lm$residuals)^(1/lon.bc_lambda) ~ (lon.lm$fitted.values)^(1/lon.bc_lambda),
+      xlab = "Fitted Values",
+      ylab = "Residuals",
+      main = "Residual Diagnostic Plot",
+	  sub = toString(c("Power scale", lat.bc_lambda)),
+      panel = function(x, y, ...)
+      {
+        panel.grid(h = -1, v = -1)
+        panel.abline(h = 0)
+        panel.xyplot(x, y, ...)
+      }
+)
 ```
 
-The Box-Cox transformation does not help becuase the residuals are not really effected. Since the optimal $\lambda$ found by Box-Cox is about $1$, we don't expect this to do a lot.
+The Box-Cox transformation does not help becuase the residuals are not really effected.
+Since the optimal $\lambda$ found by Box-Cox is about $1$, we don't expect this to do a lot.
+Since $\lambda$ is about $1$, we will use the simpler model.
 
 **(c)** Regularization
 ```{r lon_lasso}
 # Lasso L1
-lon.l1 = glmnet(as.matrix(music[1:music.num_features]),
-				as.matrix(music["longitude"]^lon.bc_lambda),
-				alpha=1)
-lon.l1_cv = cv.glmnet(as.matrix(music[1:music.num_features]),
-				as.matrix(music["longitude"]^lon.bc_lambda),
+lon.l1 = cv.glmnet(as.matrix(music[1:music.num_features]),
+				as.matrix(music["longitude"]),
 				alpha=1)
 ```
+
+
 ```{r lon_lasso_info, echo=FALSE}
-par(mfrow=c(1,2))
-plot(lon.l1, xvar="lambda")
-plot(lon.l1_cv)
+print(c("The minimum log lambda is", log(lat.l1$lambda.min)))
+plot(lon.l1)
 ```
 
 ```{r lon_ridge}
 # Ridge L2
-lon.l2 = glmnet(as.matrix(music[1:music.num_features]),
-				as.matrix(music["longitude"]^lon.bc_lambda),
-				alpha=0)
-lon.l2_cv = cv.glmnet(as.matrix(music[1:music.num_features]),
+lon.l2 = cv.glmnet(as.matrix(music[1:music.num_features]),
 				as.matrix(music["longitude"]^lon.bc_lambda),
 				alpha=0)
 ```
 ```{r lon_ridge_info, echo=FALSE}
-print(c("the minimum  lambda is :", log(lat.l1_cv$lambda.min)))
-par(mfrow=c(1,2))
-plot(lon.l2, xvar="lambda")
-plot(lon.l2_cv)
+print(c("the minimum log lambda is :", log(lat.l2$lambda.min)))
+plot(lon.l2)
 ```
 
 ```{r}
-plot(log(lat.l1_cv$lambda),lat.l1_cv$cvm,pch=19,col="red",xlab="log(Lambda)",ylab=lat.l1_cv$name)
-points(log(lat.l2_cv$lambda),lat.l2_cv$cvm,pch=19,col="grey")
+plot(log(lat.l1$lambda),lat.l1$cvm,pch=19,col="red",xlab="log(Lambda)",ylab=lat.l1$name)
+points(log(lat.l2$lambda),lat.l2$cvm,pch=19,col="grey")
 legend("topleft",legend=c("alpha= 1 L1","alpha= 1 L2"),pch=19,col=c("red","grey"))
 ```
 
@@ -191,6 +228,22 @@ plot(default.lm_cv.elastic,sub="Elasticnet")
 
 ## Question 3 - Cancer
 ```{r read_cancer, message=FALSE}
-cancer <- read_csv('./cancer.csv')
+cancer <- read_csv('./cancer.csv', col_names = FALSE)
 cancer.num_features = dim(cancer)[2]-1
+```
+
+```{r}
+cancer.lm_cv_auc <- cv.glmnet(model.matrix(~., data=cancer[1:cancer.num_features]),
+						as.matrix(cancer[cancer.num_features+1]),
+						family="binomial",
+						alpha=1,
+						type.measure ="auc",
+						nfolds=5)
+cancer.lm_cv_deviance <- cv.glmnet(model.matrix(~., data=cancer[1:cancer.num_features]),
+						as.matrix(cancer[cancer.num_features+1]),
+						family="binomial",
+						type.measure = "deviance",
+						alpha=1)
+plot(cancer.lm_cv_auc, sub="auc")
+plot(cancer.lm_cv_deviance, sub="deviance")
 ```
