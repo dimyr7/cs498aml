@@ -192,11 +192,16 @@ plot(lon.l2, main="Ridge L2")
 ```
 
 ```{r, eval=FALSE}
-plot(log(lat.l1$lambda),lat.l1$cvm,pch=19,col="red",xlab="log(Lambda)",ylab=lat.l1$name)
-points(log(lat.l2$lambda),lat.l2$cvm,pch=19,col="grey")
-legend("topleft",legend=c("alpha= 1 L1","alpha= 1 L2"),pch=19,col=c("red","grey"))
+plot(log(lon.l1$lambda),lon.l1$cvm,pch=19,col="red",xlab="log(Lambda)",ylab=lon.l1$name, xlim = c(-4,10), ylim=c(1900, 3700))
+points(log(lon.l2$lambda),lon.l2$cvm,pch=19,col="grey")
+legend("topleft",legend=c("alpha= 1 L1","alpha= 0 L2"),pch=19,col=c("red","grey"))
 ```
+It is clear from our plots that a regularization can help in certain cases. From the above we observe that in case 1 where we consider lattitude, the mean squared error is relatively reduced in both L1 and L2. In this case, both methods help in a very similar way -- they both regularize to very similar MSE values -- however it is worth mentioning that L1 always allows for a reduced amount of attributes to be considered as lamda increases, hence it already has a small advantage. The clear difference in determining whether L1 is better than L2 is rather seen in the second case, where we now consider longitude. The above plot clearly shows that L1 allows for a smaller MSE compared to L2 for the given minimum lambdas. We can thus conclude that Lasso might be a slight better choice. 
 
+From our research we can add to these results the following very useful comment found on stackOverflow: 
+
+"Keep in mind that ridge regression can't zero out coefficients; thus, you either end up including all the coefficients in the model, or none of them. In contrast, the LASSO does both parameter shrinkage and variable selection automatically. If some of your covariates are highly correlated, you may want to look at the Elastic Net instead of the LASSO."
+- http://stats.stackexchange.com/questions/866/when-should-i-use-lasso-vs-ridge/876#876
 
 ## Question 2 - Default
 ```{r read_defult, message=FALSE}
@@ -205,10 +210,8 @@ default.num_features = dim(default)[2]-1
 ```
 **(a)** Fit a linear model
 ```{r default_lm, eval=FALSE}
-default.lm_cv <- cv.glmnet(as.matrix(default[1:default.num_features]),
-						as.matrix(default["default"]),
-						type.measure = "auc",
-						family="binomial")
+
+# AUC
 default.lm_cv.lasso <- cv.glmnet(as.matrix(default[1:default.num_features]),
 						as.matrix(default["default"]),
 						family="binomial",
@@ -224,14 +227,51 @@ default.lm_cv.elastic<- cv.glmnet(as.matrix(default[1:default.num_features]),
 						family="binomial",
 						type.measure = "auc",
 						alpha=0.5)
-plot(default.lm_cv)
+
+plot(default.lm_cv.lasso, sub="Lasso")
+plot(default.lm_cv.ridge, sub="Ridge")
+plot(default.lm_cv.elastic,sub="Elasticnet")
+
+get_deviance <- function(model) {
+  best_lambda_i <- which(model$glmnet.fit$lambda == default.lm_cv.lasso$lambda.min)
+  deviance <- model$glmnet.fit$dev.ratio[best_lambda_i]
+  return(deviance)
+}
+
+# Deviance
+default.lm_cv.lasso <- cv.glmnet(as.matrix(default[1:default.num_features]),
+						as.matrix(default["default"]),
+						family="binomial",
+						type.measure = "deviance",
+						alpha=1)
+
+print(c("Best lambda's deviace for Lasso: ", get_deviance(default.lm_cv.lasso)))
+
+default.lm_cv.ridge <- cv.glmnet(as.matrix(default[1:default.num_features]),
+						as.matrix(default["default"]),
+						family="binomial",
+						type.measure = "deviance",
+						alpha=0)
+
+print(c("Best lambda's deviace for Ridge: ", get_deviance(default.lm_cv.ridge)))
+
+
+default.lm_cv.elastic<- cv.glmnet(as.matrix(default[1:default.num_features]),
+						as.matrix(default["default"]),
+						family="binomial",
+						type.measure = "deviance",
+						alpha=0.5)
+
+print(c("Best lambda's deviace for Elastic: ", get_deviance(default.lm_cv.elastic)))
+
 plot(default.lm_cv.lasso, sub="Lasso")
 plot(default.lm_cv.ridge, sub="Ridge")
 plot(default.lm_cv.elastic,sub="Elasticnet")
 ```
-
-
 ## Question 3 - Cancer
+
+Here we use a wide dataset, meaning we have more attributes than actual data. From the class notes it is clearly mentioned that a wiser approach is to use lasso and if not even an elasticnet. As mentioned earlier, Lasso will allow use to ignore certain independant variables who result in zeros after our regularization, thing that is not allowed in the ridge process.
+
 ```{r read_cancer, message=FALSE}
 cancer <- read_csv('./cancer.csv', col_names = FALSE)
 cancer.num_features = dim(cancer)[2]-1
@@ -242,7 +282,7 @@ cancer.lm_cv.lasso.auc <- cv.glmnet(model.matrix(~ ., data=cancer[1:cancer.num_f
 						cancer$state,
 						family="binomial",
 						type.measure = "auc",
-						alpha=1, nfolds=5)
+						alpha=1, nfolds=5) #not enough data for more than 6 folds
 plot(cancer.lm_cv.lasso.auc)
 
 # Deviance
@@ -251,6 +291,7 @@ cancer.lm_cv.lasso.deviance <- cv.glmnet(model.matrix(~ ., data=cancer[1:cancer.
 						family="binomial",
 						type.measure = "deviance",
 						alpha=1)
+
 plot(cancer.lm_cv.lasso.deviance)
 ```
 
