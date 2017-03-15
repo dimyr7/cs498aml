@@ -233,7 +233,7 @@ plot(default.lm_cv.ridge, sub="Ridge")
 plot(default.lm_cv.elastic,sub="Elasticnet")
 
 get_deviance <- function(model) {
-  best_lambda_i <- which(model$glmnet.fit$lambda == default.lm_cv.lasso$lambda.min)
+  best_lambda_i <- which(model$glmnet.fit$lambda == model$lambda.min)
   deviance <- model$glmnet.fit$dev.ratio[best_lambda_i]
   return(deviance)
 }
@@ -245,7 +245,7 @@ default.lm_cv.lasso <- cv.glmnet(as.matrix(default[1:default.num_features]),
 						type.measure = "deviance",
 						alpha=1)
 
-print(c("Best lambda's deviace for Lasso: ", get_deviance(default.lm_cv.lasso)))
+print(c("Best lambda's deviance for Lasso: ", get_deviance(default.lm_cv.lasso)))
 
 default.lm_cv.ridge <- cv.glmnet(as.matrix(default[1:default.num_features]),
 						as.matrix(default["default"]),
@@ -253,7 +253,7 @@ default.lm_cv.ridge <- cv.glmnet(as.matrix(default[1:default.num_features]),
 						type.measure = "deviance",
 						alpha=0)
 
-print(c("Best lambda's deviace for Ridge: ", get_deviance(default.lm_cv.ridge)))
+print(c("Best lambda's deviance for Ridge: ", get_deviance(default.lm_cv.ridge)))
 
 
 default.lm_cv.elastic<- cv.glmnet(as.matrix(default[1:default.num_features]),
@@ -262,7 +262,7 @@ default.lm_cv.elastic<- cv.glmnet(as.matrix(default[1:default.num_features]),
 						type.measure = "deviance",
 						alpha=0.5)
 
-print(c("Best lambda's deviace for Elastic: ", get_deviance(default.lm_cv.elastic)))
+print(c("Best lambda's deviance for Elastic: ", get_deviance(default.lm_cv.elastic)))
 
 plot(default.lm_cv.lasso, sub="Lasso")
 plot(default.lm_cv.ridge, sub="Ridge")
