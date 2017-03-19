@@ -3,6 +3,8 @@ output:
   html_document:
     theme: readable
     toc: yes
+  pdf_document:
+    toc: yes
 ---
 ```{r setup, echo=FALSE, message=FALSE, warning=FALSE}
 options(scipen=1, digits=4, width=80)
@@ -306,14 +308,24 @@ Essentially, the goal here was to explore these three different methods and simp
 
 From the plots it seems more obvious that Lasso gives us the best regularization model. This was mainly apparent from the binomial deviance and Misclassification error plots. 
 
-Ridge:  
+1.Ridge:  
+
   - deviance(for best regularization): 0.9318225
+  
   - MSE: ~0.194
-Lasso: 
-  - deviance(for best regularization): 0.9311568
+  
+  
+2.Lasso: 
+
+  - deviance(for best regularization): 0.9311568 
+
   - MSE: ~0.189 (depending on cv) can be bigger or smaller than Elasticnet
-Elasticnet:
+  
+  
+3.Elasticnet:
+
   - deviance(for best regularization): 0.9341511
+
   - MSE:~0.189 (depending on cv) can be bigger or smaller than Lasso 
 
 [1] "Best lambda's deviance for Lasso: " "0.120565993933999"                 
