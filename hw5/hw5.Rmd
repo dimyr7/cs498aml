@@ -169,7 +169,7 @@ xyplot((lon.lm_lambda$residuals)^(1/lon.bc_lambda) ~ (lon.lm_lambda$fitted.value
 )
 ```
 
-The Box-Cox transformation does not help becuase the residuals are not really effected.
+The Box-Cox transformation does not help because the residuals are not really effected.
 Since the optimal $\lambda$ found by Box-Cox is about $1$, we don't expect this to do a lot.
 Since $\lambda$ is about $1$, we will use the simpler model.
 
@@ -204,6 +204,8 @@ From our research we can add to these results the following very useful comment 
 - http://stats.stackexchange.com/questions/866/when-should-i-use-lasso-vs-ridge/876#876
 
 ## Question 2 - Default
+
+Here we actually need to get accuracy results from glmnet 
 ```{r read_defult, message=FALSE}
 default <- read_csv('./default.csv')
 default.num_features = dim(default)[2]-1
@@ -211,7 +213,7 @@ default.num_features = dim(default)[2]-1
 **(a)** Fit a linear model
 ```{r default_lm, eval=FALSE}
 
-# AUC
+# AUC (area under curve) Plots 
 default.lm_cv.lasso <- cv.glmnet(as.matrix(default[1:default.num_features]),
 						as.matrix(default["default"]),
 						family="binomial",
@@ -238,7 +240,7 @@ get_deviance <- function(model) {
   return(deviance)
 }
 
-# Deviance
+# Binomial Deviance Plots
 default.lm_cv.lasso <- cv.glmnet(as.matrix(default[1:default.num_features]),
 						as.matrix(default["default"]),
 						family="binomial",
@@ -267,7 +269,59 @@ print(c("Best lambda's deviance for Elastic: ", get_deviance(default.lm_cv.elast
 plot(default.lm_cv.lasso, sub="Lasso")
 plot(default.lm_cv.ridge, sub="Ridge")
 plot(default.lm_cv.elastic,sub="Elasticnet")
+
+#MSE - Mean Square Error Plots
+
+default.lm_cv.MSE.lasso <- cv.glmnet(as.matrix(default[1:default.num_features]),
+						as.matrix(default["default"]),
+						family="binomial",
+						type.measure = "class",
+						alpha=1)
+
+default.lm_cv.MSE.ridge <- cv.glmnet(as.matrix(default[1:default.num_features]),
+						as.matrix(default["default"]),
+						family="binomial",
+						type.measure = "class",
+						alpha=0)
+
+default.lm_cv.MSE.elastic<- cv.glmnet(as.matrix(default[1:default.num_features]),
+						as.matrix(default["default"]),
+						family="binomial",
+						type.measure = "class",
+						alpha=0.5)
+
+plot(default.lm_cv.MSE.lasso, sub="Lasso")
+plot(default.lm_cv.MSE.ridge, sub="Ridge")
+plot(default.lm_cv.MSE.elastic,sub="Elasticnet")
+
+
+
+
 ```
+Above, we have reported plots for all three different methods we have explored: Lasso, ridge and Elasticnet(with alpha = 0.5). There are in total three different types of plots: AUC with respect to log(lambda) (area under curve), Binomial Deviance with respect to log(lambda) and, finally, MSE (mean square error) with respect to log(lambda). 
+
+As mentioned by Tanmay on piazza: " for logistic regression you can get 3 error metrics that can be plotted against loglambda - binomial deviance, AUC, misclassification error."
+
+Essentially, the goal here was to explore these three different methods and simply report the most ideal regularization. In each case the cross validated glmnet allows us to extract the new accuracy of our model on test data. 
+
+From the plots it seems more obvious that Lasso gives us the best regularization model. This was mainly apparent from the binomial deviance and Misclassification error plots. 
+
+Ridge:  
+  - deviance(for best regularization): 0.9318225
+  - MSE: ~0.194
+Lasso: 
+  - deviance(for best regularization): 0.9311568
+  - MSE: ~0.189 (depending on cv) can be bigger or smaller than Elasticnet
+Elasticnet:
+  - deviance(for best regularization): 0.9341511
+  - MSE:~0.189 (depending on cv) can be bigger or smaller than Lasso 
+
+[1] "Best lambda's deviance for Lasso: " "0.120565993933999"                 
+[1] "Best lambda's deviance for Ridge: " "0.119432088916329"                 
+[1] "Best lambda's deviance for Elastic: " "0.120620761231308" 
+
+Hence, as predicted visually before, our results are confirmed. Lasso seems to have the best regularization in this case and for this particular iteration. We could also report the accuracy with respect to some test data, the results would be indeed very similar and cv.glmnet allows us to avoid this additional step by having an initial prediction values reported above. 
+
 ## Question 3 - Cancer
 
 Here we use a wide dataset, meaning we have more attributes than actual data. From the class notes it is clearly mentioned that a wiser approach is to use lasso and if not even an elasticnet. As mentioned earlier, Lasso will allow use to ignore certain independant variables who result in zeros after our regularization, thing that is not allowed in the ridge process.
@@ -295,4 +349,4 @@ cancer.lm_cv.lasso.deviance <- cv.glmnet(model.matrix(~ ., data=cancer[1:cancer.
 plot(cancer.lm_cv.lasso.deviance)
 ```
 
-Both measures uses about the same $\lambda$ Regarding the number of genes, we realized that the deviance measure reported a slightly higher number than AUC when we ran it multiple times. AUC uses about 10 genes, but deviance uses about 15-20 genes. 
+Both measures use about the same $\lambda$ Regarding the number of genes, we realized that the deviance measure reported a slightly higher number than AUC when we ran it multiple times. AUC uses about 10 genes, but deviance uses about 15-20 genes. 
