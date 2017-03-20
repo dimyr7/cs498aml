@@ -22,9 +22,9 @@ library(gridExtra)
 
 # CS 498 AML Homework 5
 
-brunoc2
-myronen2
-abujaba2
+  - brunoc2
+  - myronen2
+  - abujaba2
 
 This is a html/pdf render of the Rmd (Rstudio markdown file) which is also attached with correspondingly used CSV files. 
 
@@ -202,11 +202,13 @@ plot(lon.l1, main="Lasso L1")
 plot(lon.l2, main="Ridge L2")
 ```
 
-```{r, eval=FALSE}
+```{r comparison}
 plot(log(lon.l1$lambda),lon.l1$cvm,pch=19,col="red",xlab="log(Lambda)",ylab=lon.l1$name, xlim = c(-4,10), ylim=c(1900, 3700))
 points(log(lon.l2$lambda),lon.l2$cvm,pch=19,col="grey")
 legend("topleft",legend=c("alpha= 1 L1","alpha= 0 L2"),pch=19,col=c("red","grey"))
 ```
+
+
 It is clear from our plots that a regularization can help in certain cases. From the above we observe that in case 1 where we consider lattitude, the mean squared error is relatively reduced in both L1 and L2. In this case, both methods help in a very similar way -- they both regularize to very similar MSE values -- however it is worth mentioning that L1 always allows for a reduced amount of attributes to be considered as lamda increases, hence it already has a small advantage. The clear difference in determining whether L1 is better than L2 is rather seen in the second case, where we now consider longitude. The above plot clearly shows that L1 allows for a smaller MSE compared to L2 for the given minimum lambdas. We can thus conclude that Lasso might be a slight better choice. 
 
 From our research we can add to these results the following very useful comment found on stackOverflow: 
@@ -222,7 +224,7 @@ default <- read_csv('./default.csv')
 default.num_features = dim(default)[2]-1
 ```
 **(a)** Fit a linear model
-```{r default_lm, eval=FALSE}
+```{r default_lm}
 
 # AUC (area under curve) Plots 
 default.lm_cv.lasso <- cv.glmnet(as.matrix(default[1:default.num_features]),
@@ -304,11 +306,9 @@ default.lm_cv.MSE.elastic<- cv.glmnet(as.matrix(default[1:default.num_features])
 plot(default.lm_cv.MSE.lasso, sub="Lasso")
 plot(default.lm_cv.MSE.ridge, sub="Ridge")
 plot(default.lm_cv.MSE.elastic,sub="Elasticnet")
-
-
-
-
 ```
+
+
 Above, we have reported plots for all three different methods we have explored: Lasso, ridge and Elasticnet(with alpha = 0.5). There are in total three different types of plots: AUC with respect to log(lambda) (area under curve), Binomial Deviance with respect to log(lambda) and, finally, MSE (mean square error) with respect to log(lambda). 
 
 As mentioned by Tanmay on piazza: " for logistic regression you can get 3 error metrics that can be plotted against loglambda - binomial deviance, AUC, misclassification error."
