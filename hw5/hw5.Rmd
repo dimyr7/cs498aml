@@ -5,6 +5,8 @@ output:
     toc: yes
   pdf_document:
     toc: yes
+  word_document:
+    toc: yes
 ---
 ```{r setup, echo=FALSE, message=FALSE, warning=FALSE}
 options(scipen=1, digits=4, width=80)
@@ -19,6 +21,13 @@ library(gridExtra)
 ```
 
 # CS 498 AML Homework 5
+
+brunoc2
+myronen2
+abujaba2
+
+This is a html/pdf render of the Rmd (Rstudio markdown file) which is also attached with correspondingly used CSV files. 
+
 ## Question 1 - Music
 ```{r read_music, message=FALSE}
 music <- read_csv('./music.csv')
