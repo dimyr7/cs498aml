@@ -13,12 +13,18 @@ class Theta(object):
 
         pvec_temp = np.random.rand(num_topics, num_words)
         self.pvec = pvec_temp / pvec_temp.sum(axis=0)
+        print self.pvec
 
 
     def get_w_ij(self, x, (i,j)):
         ret_prod = 1.
         for k in range(self.num_words):
             ret_prod *= (self.pvec[j,k] ** x[i,k])
+            print "==============="
+            print("pvec[" + str(j) + "," + str(k) + "] = " + str(self.pvec[j,k]))
+            print("x[" + str(i) + "," + str(k) + "] = " + str(x[i,k]))
+            print("Temp prod:" + str(self.pvec[j,k] ** x[i,k]))
+            print("k=" + str(k) + ", ret_prod=" + str(ret_prod))
         return ret_prod
 
     def get_w(self, x):
@@ -26,7 +32,11 @@ class Theta(object):
         for i in range(len(x)):
             for j in range(self.num_topics):
                 w[i,j] = self.get_w_ij(x, (i,j))
-        w = w / w.sum(axis = 1)
+            if(np.all(w[i] == np.zeros(self.num_topics))):
+                print("ERRROR, ALL ZEROS, DIVIDE BY 0 PENDING, i=" + str(i))
+                exit(1)
+            print w[i]
+            w[i] = w[i]/ w[i].sum()
         return w
 
 
