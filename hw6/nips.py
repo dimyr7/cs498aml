@@ -1,6 +1,7 @@
 #! env python
 import numpy as np
 import random as rand
+import math
 
 class Theta(object):
     def __init__(self, num_topics, num_words):
@@ -17,21 +18,26 @@ class Theta(object):
 
 
     def get_w_ij(self, x, (i,j)):
+        ret_sum = math.log(self.pi[j])
+        for k in range(self.num_words):
+            temp_sum = x[i,k]*math.log(self.pvec[j,k])
+            #print("k=" + str(k) + ", temp_sum=" + str(temp_sum) + ", accum_sum=" + str(ret_sum))
+            ret_sum += temp_sum
+        print("i=" +str(i) + ", j=" + str(j) + ", e^sum=" + str(math.exp(ret_sum)))
+
+        return math.exp(ret_sum)
+
+    def get_w_ij_old(self, x, (i,j)):
         ret_prod = 1.
         for k in range(self.num_words):
             ret_prod *= (self.pvec[j,k] ** x[i,k])
-            print "==============="
-            print("pvec[" + str(j) + "," + str(k) + "] = " + str(self.pvec[j,k]))
-            print("x[" + str(i) + "," + str(k) + "] = " + str(x[i,k]))
-            print("Temp prod:" + str(self.pvec[j,k] ** x[i,k]))
-            print("k=" + str(k) + ", ret_prod=" + str(ret_prod))
         return ret_prod
 
     def get_w(self, x):
         w = np.zeros((len(x), self.num_topics))
         for i in range(len(x)):
             for j in range(self.num_topics):
-                w[i,j] = self.get_w_ij(x, (i,j))
+                w[i,j] = (self.get_w_ij(x, (i,j)))
             if(np.all(w[i] == np.zeros(self.num_topics))):
                 print("ERRROR, ALL ZEROS, DIVIDE BY 0 PENDING, i=" + str(i))
                 exit(1)
