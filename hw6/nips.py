@@ -33,6 +33,7 @@ class Theta(object):
             ret_prod *= (self.pvec[j,k] ** x[i,k])
         return ret_prod
 
+
     def get_w(self, x):
         w = np.zeros((len(x), self.num_topics))
         for i in range(len(x)):
@@ -40,10 +41,47 @@ class Theta(object):
                 w[i,j] = (self.get_w_ij(x, (i,j)))
             if(np.all(w[i] == np.zeros(self.num_topics))):
                 print("ERRROR, ALL ZEROS, DIVIDE BY 0 PENDING, i=" + str(i))
+                	exit(1)
+            print w[i]
+            w[i] = w[i]/ w[i].sum()
+        return w
+
+
+    def get_w_new(self, x):
+        w = np.zeros((len(x), self.num_topics))
+        for i in range(len(x)):
+            for j in range(self.num_topics):
+                w[i,j] = (self.get_w_ij(x, (i,j)))
+        
+            if(np.all(w[i] == np.zeros(self.num_topics))):
+                print("ERRROR, ALL ZEROS, DIVIDE BY 0 PENDING, i=" + str(i))
                 exit(1)
             print w[i]
             w[i] = w[i]/ w[i].sum()
         return w
+
+# ======
+    def get_zij(self, x):
+    	for k in range(self.num_words): 
+    		z_temp = (x.[i, k]*(math.log(self.pvec[j, k])))
+
+    	for i in range(len(x)):
+    		for j in range(self.num_topics):   
+	    		z[i,j] = math.log(self.pi[j]) + z_temp; #calculating the whole of z[i, j]
+
+
+    def get_di(self, x):
+    	d = get_zij(x).max(axis=1) #this is a collumn single vector so might have to reshape
+
+
+    def get_w_ij(self, x):
+    	z_ij = self.get_zij(x)
+    	d_i = self.get_di(x)
+
+    	for i in range(len(x)): 
+    		for j in range(self.num_topics): 
+    			w[i, j] = (math.exp(z_ij[i, j] - d_i[i])) / math.exp(math.log((z_ij - d_i).sum())) 
+# ===== 
 
 
 
