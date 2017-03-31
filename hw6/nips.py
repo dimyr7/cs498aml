@@ -41,7 +41,7 @@ class Theta(object):
                 w[i, j] = np.exp(z[i,j] - d[i])
         for i in range(len(x)):
             w[i,:] = w[i,:]/np.sum(w[i])
-        print w
+        return w
 # =====
 
 
