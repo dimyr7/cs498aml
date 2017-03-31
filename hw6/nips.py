@@ -17,8 +17,10 @@ class Theta(object):
 
 
     def get_z(self, x):
+        print "get_z"
         z = np.zeros((len(x), self.num_topics))
         for i in range(len(x)):
+            print("doc:" + str(i) + "/" + str(len(x)))
             for j in range(self.num_topics):
                 z[i,j] = np.log(self.pi[j])
                 for k in range(self.num_words):
@@ -27,12 +29,14 @@ class Theta(object):
 
 
     def get_d(self, z):
+        print "get_d"
         d = np.zeros(z.shape[0])
         for i in range(len(d)):
             d[i] = np.amax(z[i])
         return d
 
     def get_w(self, x):
+        print "get_w"
         z = self.get_z(x)
         d = self.get_d(z)
         w = np.zeros((len(x), self.num_topics))
@@ -48,7 +52,7 @@ class Theta(object):
 
 
 ## Reading the data
-docword_path = "./docword.nips.txt"
+docword_path = "./short.nips.txt"
 vocab_path   = "./vocab.nips.txt"
 
 docword = open(docword_path, "r")
@@ -58,6 +62,8 @@ num_documents = int(docword.readline())
 num_words     = int(docword.readline())
 num_entries   = int(docword.readline())
 num_topics = 30
+
+
 
 
 
@@ -82,7 +88,7 @@ for iteration in range(30):
     for j in range(num_topics):
         theta.pi[j] = np.sum(w[:,j])/num_documents
     for j in range(num_topics):
-        temp_num = np.zeros(num_topics)
+        temp_num = np.zeros(num_words)
         for i in range(num_documents):
             temp_num += data[i] * w[i,j]
         temp_den = 0.
