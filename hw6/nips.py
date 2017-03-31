@@ -1,7 +1,6 @@
 #! env python
 import numpy as np
 import random as rand
-import math
 
 class Theta(object):
     def __init__(self, num_topics, num_words):
@@ -14,74 +13,36 @@ class Theta(object):
 
         pvec_temp = np.random.rand(num_topics, num_words)
         self.pvec = pvec_temp / pvec_temp.sum(axis=0)
-        print self.pvec
 
 
-    def get_w_ij(self, x, (i,j)):
-        ret_sum = math.log(self.pi[j])
-        for k in range(self.num_words):
-            temp_sum = x[i,k]*math.log(self.pvec[j,k])
-            #print("k=" + str(k) + ", temp_sum=" + str(temp_sum) + ", accum_sum=" + str(ret_sum))
-            ret_sum += temp_sum
-        print("i=" +str(i) + ", j=" + str(j) + ", e^sum=" + str(math.exp(ret_sum)))
 
-        return math.exp(ret_sum)
+    def get_z(self, x):
+        z = np.zeros((len(x), self.num_topics))
+        for i in range(len(x)):
+            for j in range(self.num_topics):
+                z[i,j] = np.log(self.pi[j])
+                for k in range(self.num_words):
+                    z[i,j] += (x[i,k] * np.log(self.pvec[j,k]))
+        return z
 
-    def get_w_ij_old(self, x, (i,j)):
-        ret_prod = 1.
-        for k in range(self.num_words):
-            ret_prod *= (self.pvec[j,k] ** x[i,k])
-        return ret_prod
 
+    def get_d(self, z):
+        d = np.zeros(z.shape[0])
+        for i in range(len(d)):
+            d[i] = np.amax(z[i])
+        return d
 
     def get_w(self, x):
+        z = self.get_z(x)
+        d = self.get_d(z)
         w = np.zeros((len(x), self.num_topics))
         for i in range(len(x)):
             for j in range(self.num_topics):
-                w[i,j] = (self.get_w_ij(x, (i,j)))
-            if(np.all(w[i] == np.zeros(self.num_topics))):
-                print("ERRROR, ALL ZEROS, DIVIDE BY 0 PENDING, i=" + str(i))
-                	exit(1)
-            print w[i]
-            w[i] = w[i]/ w[i].sum()
-        return w
-
-
-    def get_w_new(self, x):
-        w = np.zeros((len(x), self.num_topics))
+                w[i, j] = np.exp(z[i,j] - d[i])
         for i in range(len(x)):
-            for j in range(self.num_topics):
-                w[i,j] = (self.get_w_ij(x, (i,j)))
-        
-            if(np.all(w[i] == np.zeros(self.num_topics))):
-                print("ERRROR, ALL ZEROS, DIVIDE BY 0 PENDING, i=" + str(i))
-                exit(1)
-            print w[i]
-            w[i] = w[i]/ w[i].sum()
-        return w
-
-# ======
-    def get_zij(self, x):
-    	for k in range(self.num_words): 
-    		z_temp = (x.[i, k]*(math.log(self.pvec[j, k])))
-
-    	for i in range(len(x)):
-    		for j in range(self.num_topics):   
-	    		z[i,j] = math.log(self.pi[j]) + z_temp; #calculating the whole of z[i, j]
-
-
-    def get_di(self, x):
-    	d = get_zij(x).max(axis=1) #this is a collumn single vector so might have to reshape
-
-
-    def get_w_ij(self, x):
-    	z_ij = self.get_zij(x)
-    	d_i = self.get_di(x)
-
-    	for i in range(len(x)): 
-    		for j in range(self.num_topics): 
-    			w[i, j] = (math.exp(z_ij[i, j] - d_i[i])) / math.exp(math.log((z_ij - d_i).sum())) 
-# ===== 
+            w[i,:] = w[i,:]/np.sum(w[i])
+        print w
+# =====
 
 
 
@@ -119,7 +80,7 @@ for iteration in range(30):
     print("Starting iteration " + str(iteration))
     w = theta.get_w(data)
     for j in range(num_topics):
-        theta.pi[j] = w.sum(axis=0)/num_documents
+        theta.pi[j] = np.sum(w[:,j])/num_documents
     for j in range(num_topics):
         temp_num = np.zeros(num_topics)
         for i in range(num_documents):
@@ -129,22 +90,5 @@ for iteration in range(30):
             temp_den += x[i].sum() * w[i,j]
         theta.pvec[j] = temp_num/temp_den
 
-theta1 = Theta(num_topics, num_words)
-for iteration in range(30):
-    print("Starting iteration " + str(iteration))
-    w = theta1.get_w(data)
-    for j in range(num_topics):
-        theta1.pi[j] = w.sum(axis=0)/num_documents
-    for j in range(num_topics):
-        temp_num = np.zeros(num_topics)
-        for i in range(num_documents):
-            temp_num += data[i] * w[i,j]
-        temp_den = 0.
-        for i in range(num_documents):
-            temp_den += x[i].sum() * w[i,j]
-        theta1.pvec[j] = temp_num/temp_den
-
-
-print (theta.pi - theta1.pi)
 
 print "All done"
