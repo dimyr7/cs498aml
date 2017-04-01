@@ -93,7 +93,7 @@ for iteration in range(30):
             temp_num += data[i] * w[i,j]
         temp_den = 0.
         for i in range(num_documents):
-            temp_den += x[i].sum() * w[i,j]
+            temp_den += data[i].sum() * w[i,j]
         theta.pvec[j] = temp_num/temp_den
 
 
