@@ -34,13 +34,15 @@ class Theta(object):
 
     def get_z(self, x):
         print "get_z"
-        z = np.zeros((len(x), self.num_topics))
-        for i in range(len(x)):
-            print("doc:" + str(i) + "/" + str(len(x)))
+        z = np.zeros((x.shape[0], self.num_topics))
+        for i in range(x.shape[0]):
             for j in range(self.num_topics):
                 z[i,j] = np.log(self.pi[j])
                 for k in range(self.num_words):
                     z[i,j] += (x[i,k] * np.log(self.pvec[j,k]))
+        if(np.any(z == np.nan)):
+            print "Error Apple"
+            exit(1)
         return z
 
 
@@ -55,12 +57,18 @@ class Theta(object):
         print "get_w"
         z = self.get_z(x)
         d = self.get_d(z)
-        w = np.zeros((len(x), self.num_topics))
-        for i in range(len(x)):
+        w = np.zeros((x.shape[0], self.num_topics))
+        for i in range(x.shape[0]):
             for j in range(self.num_topics):
                 w[i, j] = np.exp(z[i,j] - d[i])
-        for i in range(len(x)):
+        if(np.any(w == np.nan)):
+            print "Error Banana"
+            exit(1)
+        for i in range(x.shape[0]):
             w[i] = w[i]/np.sum(w[i])
+        if(np.any(w == np.nan)):
+            print "Error Cherry"
+            exit(1)
         return w
 
 
@@ -92,8 +100,9 @@ for i in range(num_entries):
     doc_info = map(int, docword.readline().split())
     data[doc_info[0] - 1 , doc_info[1] - 1] = doc_info[2]
 
-data = data[:500]
+data = data[:500, :100]
 num_documents = data.shape[0]
+num_words = data.shape[1]
 
 ## Initial conditions
 
@@ -117,6 +126,7 @@ for iteration in range(5):
         for i in range(num_documents):
             temp_den += data[i].sum() * w[i,j]
         temp_pvec[j] = temp_num/temp_den
+    temp_pvec[temp_pvec == 0.] = epsilon
     #print("pvec-diff" + str(theta.pvec -temp_pvec))
     theta.pvec = temp_pvec
 
