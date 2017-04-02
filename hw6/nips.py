@@ -47,7 +47,7 @@ class Theta(object):
     def get_d(self, z):
         print "get_d"
         d = np.zeros(z.shape[0])
-        for i in range(len(d)):
+        for i in range(z.shape[0]):
             d[i] = np.amax(z[i])
         return d
 
@@ -60,7 +60,7 @@ class Theta(object):
             for j in range(self.num_topics):
                 w[i, j] = np.exp(z[i,j] - d[i])
         for i in range(len(x)):
-            w[i,:] = w[i,:]/np.sum(w[i])
+            w[i] = w[i]/np.sum(w[i])
         return w
 
 
@@ -119,12 +119,13 @@ for iteration in range(5):
         temp_pvec[j] = temp_num/temp_den
     #print("pvec-diff" + str(theta.pvec -temp_pvec))
     theta.pvec = temp_pvec
-    break
-print theta.pi
-plt.figure()
-plt.bar(np.arange(num_topics), theta.pi)
-plt.xlabel("Topic #")
-plt.ylabel("$\pi_j$")
-plt.title("Probability of choosing a topic")
-plt.savefig("nips-test")
-print "All done"
+
+
+
+    plt.figure()
+    plt.bar(range(num_topics), theta.pi)
+    plt.xlabel("Topic #")
+    plt.ylabel("$\pi_j$")
+    plt.title("Probability of choosing a topic - " + str(iteration))
+    plt.savefig("nips-test-" + str(iteration))
+print "All Done"
