@@ -7,6 +7,11 @@ mpl.use('Agg')
 import matplotlib.pyplot as plt
 np.set_printoptions(threshold=np.nan)
 epsilon  = 10.**-3
+
+SUBSET_DOC = 500
+SUBSET_WORDS = 100
+
+
 class Theta(object):
     def __init__(self, num_topics, x):
         self.num_topics = num_topics
@@ -100,14 +105,14 @@ for i in range(num_entries):
     doc_info = map(int, docword.readline().split())
     data[doc_info[0] - 1 , doc_info[1] - 1] = doc_info[2]
 
-data = data[:500, :100]
+data = data[:SUBSET_DOC, :SUBSET_WORDS]
 num_documents = data.shape[0]
 num_words = data.shape[1]
 
 ## Initial conditions
 
 theta = Theta(num_topics, data)
-for iteration in range(5):
+for iteration in range(100):
     print("====Starting iteration " + str(iteration))
     w = theta.get_w(data)
     temp_pi = np.zeros(num_topics)
@@ -132,10 +137,11 @@ for iteration in range(5):
 
 
 
-    plt.figure()
+    fig = plt.figure()
     plt.bar(range(num_topics), theta.pi)
     plt.xlabel("Topic #")
     plt.ylabel("$\pi_j$")
     plt.title("Probability of choosing a topic - " + str(iteration))
-    plt.savefig("nips-test-" + str(iteration))
+    plt.savefig("./charts/nips-test-" + str(iteration))
+    plt.close(fig)
 print "All Done"
