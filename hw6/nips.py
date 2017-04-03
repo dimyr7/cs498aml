@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 np.set_printoptions(threshold=np.nan)
 epsilon  = 10.**-3
 
-SUBSET_DOC = 500
-SUBSET_WORDS = 100
+SUBSET_DOC = 1500
+SUBSET_WORDS = 1000
 
 
 class Theta(object):
@@ -18,12 +18,10 @@ class Theta(object):
         self.num_words = x.shape[1]
 
         kmeans = sklearn.cluster.KMeans(n_clusters = num_topics).fit(x)
-        print kmeans.labels_
         self.pi = np.zeros(num_topics)
         for j in range(num_topics):
             self.pi[j] = (kmeans.labels_ == j).sum()/float(x.shape[0])
             if(self.pi[j] == 0):
-                print "pi_j is 0"
                 self.pi[j] = epsilon
 
 
@@ -41,6 +39,8 @@ class Theta(object):
         print "get_z"
         z = np.zeros((x.shape[0], self.num_topics))
         for i in range(x.shape[0]):
+            if(i%50 == 0):
+                print("doc: " + str(i) + "/" + str(x.shape[0]))
             for j in range(self.num_topics):
                 z[i,j] = np.log(self.pi[j])
                 for k in range(self.num_words):
@@ -74,6 +74,7 @@ class Theta(object):
         if(np.any(w == np.nan)):
             print "Error Cherry"
             exit(1)
+
         return w
 
 
@@ -109,10 +110,15 @@ data = data[:SUBSET_DOC, :SUBSET_WORDS]
 num_documents = data.shape[0]
 num_words = data.shape[1]
 
-## Initial conditions
 
+print("number of documents (i): " + str(num_documents))
+print("number of topics (j): " + str(num_topics))
+print("number of words (k): " + str(num_words))
+
+
+## Initial conditions
 theta = Theta(num_topics, data)
-for iteration in range(100):
+for iteration in range(30):
     print("====Starting iteration " + str(iteration))
     w = theta.get_w(data)
     temp_pi = np.zeros(num_topics)
