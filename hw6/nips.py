@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 np.set_printoptions(threshold=np.nan)
 epsilon  = 10.**-3
 
-SUBSET_DOC = 1500
-SUBSET_WORDS = 1000
+SUBSET_DOC = 500
+SUBSET_WORDS = 100
 
 
 class Theta(object):
@@ -79,21 +79,17 @@ class Theta(object):
 
 
 
-    # this function returns a 30x10 matrix "aka" the top ten words(10) for each topic(30) 
-    def get_top_words(self): 
-   		temp_p = self.pvec
-   		temp_top_words = np.zeros((30,10))  
-   		for j in range(self.num_topics): 
-   			temp_dummy = temp_p[j] # first iteration 
+    # this function returns a 30x10 matrix "aka" the top ten words(10) for each topic(30)
+    def get_top_words(self):
+        top_words = np.zeros((2, 30,10))
+        for j in range(self.num_topics):
+            # self.pvec[j].argsort() : returns array of indexes corresponding from smallest to largest word probabilities for topic j
+            # self.pvec[j].argsort()[::-1]  : returns array of indexes corresponding from largest to smallest word probabilities for topic j
+            # self.pvec[j].argsort()[::-1][:10]  : returns array of indexes corresponding from largest to smallest(max 10) word probabilities for topic j
+            top_words[0, j] = self.pvec[j].argsort()[::-1][:10]
+            top_words[1, j] = self.pvec[j][top_words[0,j].astype(int)]
 
-			temp_dummy.sort()  
-			temp_dummy = np.resize(temp_dummy, (1,10))  #for a given topic this contains the top 10 words 
-
-			for i in range(temp_dummy.shape[1]) 
-				#gradualy populating the top words matrix of shape "j x k" 
-				temp_top_words[i, j] = temp_dummy[i]
-
-		return temp_top_words 	
+        return top_words
 
 ## Reading the data
 docword_path = "./docword.nips.txt"
@@ -157,7 +153,11 @@ for iteration in range(30):
     #print("pvec-diff" + str(theta.pvec -temp_pvec))
     theta.pvec = temp_pvec
 
-
+    top_words = theta.get_top_words()
+    for j in range(num_topics):
+        print("\ttopic: " + str(j))
+        for k in range(10):
+            print("\t\t" + str(k) + "th most popular word:" + str(dictionary[top_words[0,j,k].astype(int)]) + " with probability: " + str(top_words[1,j,k]))
 
     fig = plt.figure()
     plt.bar(range(num_topics), theta.pi)
