@@ -78,6 +78,22 @@ class Theta(object):
 
 
 
+    # this function returns a 30x10 matrix "aka" the top ten words(10) for each topic(30) 
+    def get_top_words(self): 
+   		temp_p = self.pvec
+   		temp_top_words = np.zeros((30,10))  
+   		for j in range(self.num_topics): 
+   			temp_dummy = temp_p[j] # first iteration 
+
+			temp_dummy.sort()  
+			temp_dummy = np.resize(temp_dummy, (1,10))  #for a given topic this contains the top 10 words 
+
+			for i in range(temp_dummy.shape[1]) 
+				#gradualy populating the top words matrix of shape "j x k" 
+				temp_top_words[i, j] = temp_dummy[i]
+
+		return temp_top_words 	
+
 ## Reading the data
 docword_path = "./docword.nips.txt"
 vocab_path   = "./vocab.nips.txt"
