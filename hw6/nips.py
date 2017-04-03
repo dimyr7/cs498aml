@@ -153,11 +153,6 @@ for iteration in range(30):
     #print("pvec-diff" + str(theta.pvec -temp_pvec))
     theta.pvec = temp_pvec
 
-    top_words = theta.get_top_words()
-    for j in range(num_topics):
-        print("\ttopic: " + str(j))
-        for k in range(10):
-            print("\t\t" + str(k) + "th most popular word:" + str(dictionary[top_words[0,j,k].astype(int)]) + " with probability: " + str(top_words[1,j,k]))
 
     fig = plt.figure()
     plt.bar(range(num_topics), theta.pi)
@@ -167,3 +162,9 @@ for iteration in range(30):
     plt.savefig("./charts/nips-test-" + str(iteration))
     plt.close(fig)
 print "All Done"
+
+top_words = theta.get_top_words()
+    for j in range(num_topics):
+        print("\ttopic: " + str(j))
+        for k in range(10):
+            print("\t\t" + str(k) + "the most popular word:" + str(dictionary[top_words[0,j,k].astype(int)]) + " with probability: " + str(top_words[1,j,k]))
