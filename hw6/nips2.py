@@ -17,4 +17,3 @@ smallsunset = misc.imread("part2images/smallsunset.png")
 
 
 
-

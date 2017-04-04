@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 np.set_printoptions(threshold=np.nan)
 epsilon  = 10.**-3
 
-SUBSET_DOC = 500
-SUBSET_WORDS = 100
+SUBSET_DOC = 1500  #500 for smaller set 
+SUBSET_WORDS = 12419  #100 for smaller set
 
 
 class Theta(object):
@@ -36,7 +36,7 @@ class Theta(object):
 
 
     def get_z(self, x):
-        print "get_z"
+        print ("get_z")
         z = np.zeros((x.shape[0], self.num_topics))
         for i in range(x.shape[0]):
             if(i%50 == 0):
@@ -46,20 +46,20 @@ class Theta(object):
                 for k in range(self.num_words):
                     z[i,j] += (x[i,k] * np.log(self.pvec[j,k]))
         if(np.any(z == np.nan)):
-            print "Error Apple"
+            print ("Error Apple")
             exit(1)
         return z
 
 
     def get_d(self, z):
-        print "get_d"
+        print ("get_d")
         d = np.zeros(z.shape[0])
         for i in range(z.shape[0]):
             d[i] = np.amax(z[i])
         return d
 
     def get_w(self, x):
-        print "get_w"
+        print ("get_w")
         z = self.get_z(x)
         d = self.get_d(z)
         w = np.zeros((x.shape[0], self.num_topics))
@@ -67,12 +67,12 @@ class Theta(object):
             for j in range(self.num_topics):
                 w[i, j] = np.exp(z[i,j] - d[i])
         if(np.any(w == np.nan)):
-            print "Error Banana"
+            print ("Error Banana")
             exit(1)
         for i in range(x.shape[0]):
             w[i] = w[i]/np.sum(w[i])
         if(np.any(w == np.nan)):
-            print "Error Cherry"
+            print ("Error Cherry")
             exit(1)
 
         return w
@@ -161,10 +161,13 @@ for iteration in range(30):
     plt.title("Probability of choosing a topic - " + str(iteration))
     plt.savefig("./charts/nips-test-" + str(iteration))
     plt.close(fig)
-print "All Done"
+
 
 top_words = theta.get_top_words()
-    for j in range(num_topics):
-        print("\ttopic: " + str(j))
-        for k in range(10):
-            print("\t\t" + str(k) + "the most popular word:" + str(dictionary[top_words[0,j,k].astype(int)]) + " with probability: " + str(top_words[1,j,k]))
+for j in range(num_topics):
+	print("\ttopic: " + str(j))
+	for k in range(10):
+ 		print("\t\t" + str(k) + "the most popular word:" + str(dictionary[top_words[0,j,k].astype(int)]) + " with probability: " + str(top_words[1,j,k]))
+
+print ("All Done")
+
