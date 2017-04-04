@@ -45,9 +45,9 @@ class NormalTheta(object):
             w[i,] = w[i,]/w[i,].sum()
         return w
 
-images = {'fish'   : misc.imread("./em_images/fish.png"),
-          'flower' : misc.imread("./em_images/flower.png"),
-          'sunset' : misc.imread("./em_images/sunset.png")}
+images = {'fish'   : misc.imread("./em_images/fish.png").flatten(),
+          'flower' : misc.imread("./em_images/flower.png").flatten(),
+          'sunset' : misc.imread("./em_images/sunset.png").flatten()}
 
 def do_em(data, num_segments):
     theta = NormalTheta(num_segments, data)
