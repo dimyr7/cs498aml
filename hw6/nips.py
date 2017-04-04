@@ -12,6 +12,7 @@ SUBSET_DOC = 500
 SUBSET_WORDS = 100
 top_x_words = 10
 num_topics = 30
+num_iterations = 10
 
 
 class TopicTheta(object):
@@ -47,9 +48,6 @@ class TopicTheta(object):
                 z[i,j] = np.log(self.pi[j])
                 for k in range(self.num_words):
                     z[i,j] += (x[i,k] * np.log(self.pvec[j,k]))
-        if(np.any(z == np.nan)):
-            print "Error Apple"
-            exit(1)
         return z
 
 
@@ -159,7 +157,7 @@ print("number of words (k): " + str(num_words))
 
 ## Initial conditions
 theta = TopicTheta(num_topics, data)
-for iteration in range(5):
+for iteration in range(num_iterations):
     print("====Starting iteration " + str(iteration))
     w = theta.get_w(data)
     temp_pi = np.zeros(num_topics)
@@ -190,7 +188,6 @@ for iteration in range(5):
     plt.title("Probability of choosing a topic - " + str(iteration))
     plt.savefig("./charts/nips-test-" + str(iteration))
     plt.close(fig)
-print "All Done"
 
 top_words_csv = open('top_words.csv', 'w')
 top_words_csv.write("topic, ")
