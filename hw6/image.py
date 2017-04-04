@@ -65,15 +65,37 @@ images = {'fish'   : misc.imread("./em_images/fish.png"),
           'flower' : misc.imread("./em_images/flower.png"),
           'sunset' : misc.imread("./em_images/sunset.png")}
 
+for k, image in images:
+    dims = image.shape
+    images[k] = image.reshape(dims[0] * dims[1])
+
 def do_em(data, num_segments):
     theta = NormalTheta(num_segments, data)
     for iteration in range(num_iterations):
-        """
-        TOOD
-        """
+        print("== Starting Iteration: " + str(iteration))
+        w = theta.get_w(data)
+        temp_mu = np.zeros((num_segments, data.shape[1]))
+        for j in range(num_segments):
+            temp_sum = np.zeros(data.shape[1])
+            for i in range(x.shape[0]):
+                temp_sum += x[i] * w[i,j]
+            temp_mu = temp_sum/w[:, j].sum()
 
-for _, image in images.iteritems():
+
+        temp_pi = np.zeros(num_segments)
+        for j in range(num_segments):
+            temp_pi[j] = w[:, j].sum()/data.shape[0]
+        theta.pi = temp_pi
+    """
+    TODO - save and color the resulting clusters
+    """
+
+
+
+for k, image in images.iteritems():
+    print("========= Image: " + k)
     for num_segments in segments:
+        print("===== Num Segs: " + str(num_segments))
         do_em(image, num_segments)
 
 do_em(images["fish"], 20)

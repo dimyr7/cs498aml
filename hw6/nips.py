@@ -68,7 +68,7 @@ class TopicTheta(object):
             print ("Error Banana")
             exit(1)
         for i in range(x.shape[0]):
-            w[i] = w[i]/np.sum(w[i])
+            w[i] = w[i]/(w[i].sum())
         if(np.any(w == np.nan)):
             print ("Error Cherry")
             exit(1)
@@ -160,8 +160,7 @@ for iteration in range(num_iterations):
     w = theta.get_w(data)
     temp_pi = np.zeros(num_topics)
     for j in range(num_topics):
-        temp_pi[j] = np.sum(w[:,j])/num_documents
-    #print("pi-diff" + str(theta.pi - temp_pi))
+        temp_pi[j] = w[:,j].sum()/num_documents
     theta.pi = temp_pi
 
 
@@ -175,7 +174,6 @@ for iteration in range(num_iterations):
             temp_den += data[i].sum() * w[i,j]
         temp_pvec[j] = temp_num/temp_den
     temp_pvec[temp_pvec == 0.] = epsilon
-    #print("pvec-diff" + str(theta.pvec -temp_pvec))
     theta.pvec = temp_pvec
 
 
