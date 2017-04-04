@@ -1,9 +1,10 @@
 #! env python
 
 import numpy as np
+from scipy import misc
 import sklearn.cluster
-import random as rand
 import matplotlib as mpl
+import glob
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 np.set_printoptions(threshold=np.nan)
@@ -22,7 +23,7 @@ class NormalTheta(object):
         print "get_d"
         d_min = np.zeros(x[0].shape)
         d_min[:] = np.NINF
-        for i in range(x[0].shape)
+        for i in range(x[0].shape):
             for j in range(self.num_segments):
                 temp_diff = x[i] - self.mu[j]
                 if(temp_diff.dot(temp_diff) > d_min[i]):
@@ -31,7 +32,7 @@ class NormalTheta(object):
 
 
 
-    def get_w(self, x)
+    def get_w(self, x):
         print "get_w"
         d = self.get_d(x)
         w = np.zeros((x.shape[0], self.num_segments))
@@ -44,12 +45,18 @@ class NormalTheta(object):
             w[i,] = w[i,]/w[i,].sum()
         return w
 
-def do_em(data, num_segments):
-    print("image" + str(num_segments))
-    theta = NormalTheta(num_segments, data)
-    for iteration in range(num_iterations)
+images = {'fish'   : misc.imread("./em_images/fish.png"),
+          'flower' : misc.imread("./em_images/flower.png"),
+          'sunset' : misc.imread("./em_images/sunset.png")}
 
-for image in images:
+def do_em(data, num_segments):
+    theta = NormalTheta(num_segments, data)
+    for iteration in range(num_iterations):
+        """
+        TOOD
+        """
+
+for _, image in images.iteritems():
     for num_segments in segments:
         do_em(image, num_segments)
 
