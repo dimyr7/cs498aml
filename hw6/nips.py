@@ -6,13 +6,15 @@ import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 np.set_printoptions(threshold=np.nan)
-epsilon  = 10.**-3
 
+epsilon  = 10.**-3
 SUBSET_DOC = 500
 SUBSET_WORDS = 100
+top_x_words = 10
+num_topics = 30
 
 
-class Theta(object):
+class TopicTheta(object):
     def __init__(self, num_topics, x):
         self.num_topics = num_topics
         self.num_words = x.shape[1]
@@ -77,16 +79,23 @@ class Theta(object):
 
         return w
 
-
+    def get_top_words(self, topx):
+        top_words = np.zeros((self.num_topics, topx), dtype=object)
+        for j in range(self.num_topics):
+            temp_id   = self.pvec[j].argsort()[::-1][:topx]
+            temp_pvec = self.pvec[j][temp_id]
+            for k in range(topx):
+                top_words[j,k] = (temp_id[k], temp_pvec[k])
+        return top_words
 
     # this function returns a 30x10 matrix "aka" the top ten words(10) for each topic(30)
-    def get_top_words(self):
-        top_words = np.zeros((2, 30,10))
+    def get_top_words_old(self, topx):
+        top_words = np.zeros((2, 30,topx))
         for j in range(self.num_topics):
             # self.pvec[j].argsort() : returns array of indexes corresponding from smallest to largest word probabilities for topic j
             # self.pvec[j].argsort()[::-1]  : returns array of indexes corresponding from largest to smallest word probabilities for topic j
             # self.pvec[j].argsort()[::-1][:10]  : returns array of indexes corresponding from largest to smallest(max 10) word probabilities for topic j
-            top_words[0, j] = self.pvec[j].argsort()[::-1][:10]
+            top_words[0, j] = self.pvec[j].argsort()[::-1][:topx]
             top_words[1, j] = self.pvec[j][top_words[0,j].astype(int)]
 
         return top_words
@@ -101,16 +110,13 @@ vocab   = open(vocab_path,   "r")
 num_documents = int(docword.readline())
 num_words     = int(docword.readline())
 num_entries   = int(docword.readline())
-num_topics = 30
 
 
 
-
-
-dictionary = [""]*num_words
-
+dictionary = np.zeros(num_words, dtype=object)
 for i in range(num_words):
     dictionary[i] = vocab.readline()
+
 
 
 data = np.zeros((num_documents, num_words))
@@ -118,19 +124,42 @@ for i in range(num_entries):
     doc_info = map(int, docword.readline().split())
     data[doc_info[0] - 1 , doc_info[1] - 1] = doc_info[2]
 
+
+total_words = data.sum(axis=0)
+
+subset_total_words = total_words[total_words < 200]
+fig = plt.figure()
+plt.hist(subset_total_words, bins="auto")
+plt.xlabel("word that appears $x$ times in all of the documents")
+plt.ylabel("number of words in the vocabulary")
+plt.title("frequency distribution of how many common/rare words there are")
+plt.savefig("word_occurence_frequencies")
+plt.close(fig)
+
+excluding_total_words = total_words < 15
+dictionary = dictionary[-excluding_total_words]
+data = data[:, -excluding_total_words]
+num_documents = data.shape[0]
+num_words = data.shape[1]
+
+
+print("Dictionary shape:" + str(dictionary.shape))
+print("Data shape: " + str(data.shape))
+
+"""
 data = data[:SUBSET_DOC, :SUBSET_WORDS]
 num_documents = data.shape[0]
 num_words = data.shape[1]
+"""
 
 
 print("number of documents (i): " + str(num_documents))
 print("number of topics (j): " + str(num_topics))
 print("number of words (k): " + str(num_words))
 
-
 ## Initial conditions
-theta = Theta(num_topics, data)
-for iteration in range(30):
+theta = TopicTheta(num_topics, data)
+for iteration in range(5):
     print("====Starting iteration " + str(iteration))
     w = theta.get_w(data)
     temp_pi = np.zeros(num_topics)
@@ -163,8 +192,19 @@ for iteration in range(30):
     plt.close(fig)
 print "All Done"
 
-top_words = theta.get_top_words()
-    for j in range(num_topics):
-        print("\ttopic: " + str(j))
-        for k in range(10):
-            print("\t\t" + str(k) + "the most popular word:" + str(dictionary[top_words[0,j,k].astype(int)]) + " with probability: " + str(top_words[1,j,k]))
+top_words_csv = open('top_words.csv', 'w')
+top_words_csv.write("topic, ")
+for i in range(top_x_words):
+    top_words_csv.write(str(i+1) + "th word and probability, ")
+top_words_csv.write("\n")
+
+
+top_words = theta.get_top_words(top_x_words)
+for j in range(top_words.shape[0]):
+    top_words_csv.write(str(j+1) + ", ")
+    for k in range(top_words.shape[1]):
+        temp_id, temp_p = top_words[j,k]
+        top_words_csv.write(dictionary[temp_id].rstrip() + " " + str(round(temp_p,3)) + ", ")
+    top_words_csv.write("\n")
+
+top_words_csv.close()
