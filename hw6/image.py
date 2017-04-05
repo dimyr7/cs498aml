@@ -9,6 +9,8 @@ mpl.use('Agg')
 import matplotlib.pyplot as plt
 np.set_printoptions(threshold=np.nan)
 
+RGB_Range = 255
+Pixel_Size = 3
 num_iterations = 10
 images = np.array(["fish", "flower", "sunset"], dtype=object)
 segments = np.array([10, 20, 50])
@@ -16,22 +18,26 @@ segments = np.array([10, 20, 50])
 class NormalTheta(object):
     def __init__(self, num_segments, x):
         self.num_segments = num_segments
-        self.mu = np.zeros(num_segments)
-        self.pi = np.zeros(num_segments)
-        
-        #pi[j] --> probability that the cluster is chosen  
-        #mu[j] --> mean center value of given cluster j 
-        # given a pixel, what cluster is chosen ? 
+        self.mu = np.zeros((num_segments, x.shape[1]))
+        self.pi = np.zeros((num_segments, x.shape[1]))
+
+        #pi[j] --> probability that the cluster is chosen
+        #mu[j] --> mean center value of given cluster j
+        # given a pixel, what cluster is chosen ?
+
+        kmeans = sklearn.cluster.KMeans(n_clusters = num_segments).fit(x)
 
         #determine pi[j]
-        kmeans = sklearn.cluster.KMeans(n_clusters = num_segments).fit(x)
         for j in range(num_segments):
             self.pi[j] = (kmeans.labels_ == j).sum()/float(x.shape[0])
 
         #determine mu[j]
-        total_pixel_count = x.sum(axis=0)
-         for j in range(num_segments):
-             self.mu[j] = np.divide(x[kmeans.labels_ == j].sum(axis=0), total_pixel_count)
+        print kmeans.cluster_centers_.shape
+        for j in range(num_segments):
+            self.mu[j] = kmeans.cluster_centers_[j]
+
+        print self.pi
+        print self.mu
 
 
 
@@ -61,16 +67,15 @@ class NormalTheta(object):
             w[i,] = w[i,]/w[i,].sum()
         return w
 
-images = {'fish'   : misc.imread("./em_images/fish.png"),
-          'flower' : misc.imread("./em_images/flower.png"),
-          'sunset' : misc.imread("./em_images/sunset.png")}
+images = {'fish'   : misc.imread("./em_images/fish.png").reshape((-1,   Pixel_Size))/RGB_Range,
+          'flower' : misc.imread("./em_images/flower.png").reshape((-1, Pixel_Size))/RGB_Range,
+          'sunset' : misc.imread("./em_images/sunset.png").reshape((-1, Pixel_Size))/RGB_Range}
 
-for k, image in images:
-    dims = image.shape
-    images[k] = image.reshape(dims[0] * dims[1])
 
 def do_em(data, num_segments):
     theta = NormalTheta(num_segments, data)
+    print data
+    exit(0)
     for iteration in range(num_iterations):
         print("== Starting Iteration: " + str(iteration))
         w = theta.get_w(data)
