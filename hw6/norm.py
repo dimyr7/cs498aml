@@ -115,14 +115,25 @@ def do_em((name, image), num_segments):
 
     pis = np.ones(num_segments)/num_segments
     means = rand.rand(num_segments, image.data.shape[1])
+    means = np.array([
+        [0.3449614,0.52336887,0.3208887]
+        [0.9849162,0.83266914,0.4076067]
+        [0.1184523,0.03383186,0.8897139]
+        [0.4807179,0.05975474,0.4806317]
+        [0.1769631,0.68263488,0.1888539]
+        [0.7355660,0.02289960,0.1146740]
+        [0.3528862,0.88643099,0.4229427]
+        [0.4365645,0.41412098,0.0391218]
+        [0.6389653,0.12659308,0.8712448]
+        [0.1673267,0.63445092,0.7311664]])
     last_Q = np.NINF
     """EM Steps"""
     while(True):
         print "E step"
         inner = np.zeros((image.data.shape[0], num_segments))
-        for i in range(num_segments):
+        for j in range(num_segments):
             dist = image.data-means[i]
-            inner[:,i] =  (-0.5) * np.sum(np.power(dist, 2),axis=1)
+            inner[:,j] =  (-0.5) * np.sum(np.power(dist, 2),axis=1)
 
         print "Calc wij"
         top = np.dot(np.exp(inner)  , np.diagflat(pis))
