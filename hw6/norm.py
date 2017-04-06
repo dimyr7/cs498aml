@@ -60,7 +60,8 @@ class NormalTheta(object):
         self.mu = kmeans.cluster_centers_
         """
         self.mu = rand.rand(num_segments, x.shape[1])
-        self.pi = np.ones(num_segments)/num_segments
+        self.pi = rand.rand(num_segments)
+        self.pi = self.pi/float(self.pi.sum())
 
 
 
@@ -107,57 +108,48 @@ def show_segments(image,theta, num_segments, path):
 
 
 def do_em((name, image), num_segments):
-    theta = NormalTheta(num_segments, image.data)
-    show_segments(image, theta, num_segments, "output/" + name + "_" + str(num_segments) + "_kmeans.png")
-    for iteration in range(num_iterations):
-        print("== Starting Iteration: " + str(iteration))
-        w = theta.get_w(image.data)
+    stop_criteria = 0.00001
+    num_pixels = image.data.shape[0]
+    height = image.xsize
+    width = image.ysize
 
-        print "updating mu"
-        temp_mu = np.zeros((num_segments, image.data.shape[1]))
-        # Update mu
+    pis = np.ones(num_segments)/num_segments
+    means = rand.rand(num_segments, image.data.shape[1])
+    last_Q = np.NINF
+    """EM Steps"""
+    while(True):
+        print "E step"
+        inner = np.zeros((image.data.shape[0], num_segments))
+        for i in range(num_segments):
+            dist = image.data-means[i]
+            inner[:,i] =  (-0.5) * np.sum(np.power(dist, 2),axis=1)
+
+        print "Calc wij"
+        top = np.dot(np.exp(inner)  , np.diagflat(pis))
+        bottom = top.sum(axis=1)
+        wijs = ((top.T)/bottom).T
+
+
+        print "Calc Q"
+        Q = np.sum(np.multiply(inner, wijs))
+
+        print "M step"
         for j in range(num_segments):
-            temp_sum = np.zeros(image.data.shape[1])
-            for i in range(image.data.shape[0]):
-                temp_sum += image.data[i] * w[i,j]
-            temp_mu = temp_sum/(w[:, j]).sum()
-            print temp_mu
-            theta.mu[j] = temp_mu
-
-        print "updating pi"
-        temp_pi = np.zeros(num_segments)
-        for j in range(num_segments):
-            temp_pi[j] = w[:, j].sum()/image.data.shape[0]
-        theta.pi = temp_pi
-        path = "output/" + name + "_" + str(num_segments) + "_" +  str(iteration) + "_" + str(num_iterations) + ".png"
-        show_segments(image, theta, num_segments, path)
-        sys.stdout.flush()
-    exit(1)
-
-num_segments = 10
-good_em_image = images['fish']
-good_em = sklearn.mixture.GaussianMixture(n_components=num_segments).fit(good_em_image.data)
-output = good_em.predict(good_em_image.data)
-new_image = Image(orig=good_em_image)
-for i in range(good_em_image.data.shape[0]):
-    new_image.data[i] = good_em.means_[output[i]]
-path="./output/fish_goodEM.png"
-new_image.save_pic(path)
-"""
-theta = NormalTheta(num_segments, good_em_image.data)
-theta.mu = good_em.means_
-theta.pi = good_em.weights_
-w = theta.get_w(good_em_image.data)
-assigned_segments = w.argmax(axis=1)
-new_image = Image(orig=good_em_image)
-for i in range(good_em_image.data.shape[0]):
-    new_image.data[i] = theta.mu[assigned_segments[i]]
-path="./output/fish_goodEM.png"
-new_image.save_pic(path)
-"""
-
-
-exit(1)
+            top = np.sum((image.data.T  * wijs[:,j]).T, axis=0)
+            bottom = sum(wijs[:,j])
+            means[j] = top/bottom
+            pis[j] = sum(wijs[:,j])/image.data.shape[0]
+        diff_Q = np.abs(Q - last_Q)
+        print means
+        if(diff_Q < stop_criteria):
+            break
+        else:
+            last_Q = Q
+    assigned_segments = wijs.argmax(axis=1)
+    new_image = Image(orig=image)
+    for i in range(image.data.shape[0]):
+        new_image.data[i] = means[assigned_segments[i]]
+    new_image.save_pic("./output/R_" + name + "_" + str(num_segments) + ".png")
 
 for key, image in images.iteritems():
     print("========= Image: " + key)
