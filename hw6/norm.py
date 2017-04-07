@@ -28,6 +28,8 @@ class Image(object):
             self.ysize = temp_img.shape[1]
             self.Pixel_Size = temp_img.shape[2]
             self.data = temp_img.reshape((-1, self.Pixel_Size))/RGB_Range
+            self.orig_mean = np.mean(self.data)
+            self.orig_std = np.std(self.data)
             self.data = scale(self.data)
 
     def save_pic(self, name):
@@ -162,7 +164,7 @@ def do_em((name, image), num_segments):
     assigned_segments = wijs.argmax(axis=1)
     new_image = Image(orig=image)
     for i in range(image.data.shape[0]):
-        new_image.data[i] = means[assigned_segments[i]]
+        new_image.data[i] = means[assigned_segments[i]]*image.orig_std + image.orig_mean
     new_image.save_pic("./output/R_" + name + "_" + str(num_segments) + ".png")
 
 for key, image in images.iteritems():
