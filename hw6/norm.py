@@ -26,10 +26,13 @@ class Image(object):
             self.xsize = temp_img.shape[0]
             self.ysize = temp_img.shape[1]
             self.Pixel_Size = temp_img.shape[2]
-            self.data = temp_img.reshape((-1, self.Pixel_Size))/RGB_Range
-            self.orig_mean = np.array([np.mean(self.data[:, i]) for i in range(self.data.shape[1])])
-            self.orig_std = np.array([np.std(self.data[:, i]) for i in range(self.data.shape[1])])
-            self.data = scale(self.data)
+
+            self.data = temp_img.reshape((-1,self.Pixel_Size))/RGB_Range
+            self.scalar = sklearn.preprocessing.StandardScaler()
+
+            self.data = self.scalar.fit_transform(self.data)
+
+
 
     def save_pic(self, name):
         print "saving pic to " + str(name)
@@ -39,7 +42,11 @@ class Image(object):
         self.xsize = orig.xsize
         self.ysize = orig.ysize
         self.Pixel_Size = orig.Pixel_Size
+
         self.data = np.copy(orig.data)
+        self.orig_mean = np.copy(scalar.orig_mean)
+        self.orig_std = np.copy(scalar.orig_std)
+        self.scalar = orig.scalar
 
 
 
@@ -111,13 +118,14 @@ def show_segments(image,theta, num_segments, path):
 
 
 def do_em((name, image), num_segments):
-    stop_criteria = 0.00001
+    stop_criteria = 1
     num_pixels = image.data.shape[0]
     height = image.xsize
     width = image.ysize
 
     pis = np.ones(num_segments)/num_segments
     means = rand.rand(num_segments, image.data.shape[1])
+    """
     means = np.array([
         [0.3449614,0.52336887,0.3208887],
         [0.9849162,0.83266914,0.4076067],
@@ -129,42 +137,46 @@ def do_em((name, image), num_segments):
         [0.4365645,0.41412098,0.0391218],
         [0.6389653,0.12659308,0.8712448],
         [0.1673267,0.63445092,0.7311664]])
+    """
     last_Q = np.NINF
     """EM Steps"""
     while(True):
-        print "E step"
         inner = np.zeros((image.data.shape[0], num_segments))
         for j in range(num_segments):
-            dist = image.data-means[j]
+            dist = image.data - means[j]
             inner[:,j] =  (-0.5) * np.sum(np.power(dist, 2),axis=1)
 
-        print "Calc wij"
         top = np.dot(np.exp(inner)  , np.diagflat(pis))
         bottom = top.sum(axis=1)
         wijs = ((top.T)/bottom).T
 
 
-        print "Calc Q"
         Q = np.sum(np.multiply(inner, wijs))
 
-        print "M step"
         for j in range(num_segments):
             top = np.sum((image.data.T  * wijs[:,j]).T, axis=0)
             bottom = sum(wijs[:,j])
             means[j] = top/bottom
             pis[j] = sum(wijs[:,j])/image.data.shape[0]
         diff_Q = Q - last_Q
-        print means
         print "diff_Q: " + str(diff_Q)
         if(diff_Q < stop_criteria):
             break
         else:
             last_Q = Q
+    print "========"
+    print (image.scalar.inverse_transform(means)*255).astype(int)
+    print "========"
+    new_means = image.scalar.inverse_transform(means)
+    path = "q2_output/" + name + "_" + str(num_segments) + ".png"
     assigned_segments = wijs.argmax(axis=1)
-    new_image = Image(orig=image)
+    new_data = np.zeros((image.data.shape[0], image.data.shape[1]))
     for i in range(image.data.shape[0]):
-        new_image.data[i] = means[assigned_segments[i]]*image.orig_std + image.orig_mean
-    new_image.save_pic("./output/R_" + name + "_" + str(num_segments) + ".png")
+        new_data[i] = new_means[assigned_segments[i]]
+
+    print "saving pic to " + str(path)
+    pic = new_data.reshape((image.xsize, image.ysize, image.Pixel_Size))
+    plt.imsave(fname=path, arr=pic)
 
 for key, image in images.iteritems():
     print("========= Image: " + key)
