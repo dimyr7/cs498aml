@@ -9,6 +9,7 @@ import sys
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 import sklearn.mixture
+from sklearn.preprocessing import scale
 np.set_printoptions(threshold=np.nan)
 
 RGB_Range = 255.
@@ -26,6 +27,9 @@ class Image(object):
             self.ysize = temp_img.shape[1]
             self.Pixel_Size = temp_img.shape[2]
             self.data = temp_img.reshape((-1, self.Pixel_Size))/RGB_Range
+            self.orig_mean = np.array([np.mean(self.data[:, i]) for i in range(self.data.shape[1])])
+            self.orig_std = np.array([np.std(self.data[:, i]) for i in range(self.data.shape[1])])
+            self.data = scale(self.data)
 
     def save_pic(self, name):
         print "saving pic to " + str(name)
@@ -150,6 +154,8 @@ def do_em((name, image), num_segments):
             means[j] = top/bottom
             pis[j] = sum(wijs[:,j])/image.data.shape[0]
         diff_Q = Q - last_Q
+        print means
+        print "diff_Q: " + str(diff_Q)
         if(diff_Q < stop_criteria):
             break
         else:
@@ -157,7 +163,7 @@ def do_em((name, image), num_segments):
     assigned_segments = wijs.argmax(axis=1)
     new_image = Image(orig=image)
     for i in range(image.data.shape[0]):
-        new_image.data[i] = means[assigned_segments[i]]
+        new_image.data[i] = means[assigned_segments[i]]*image.orig_std + image.orig_mean
     new_image.save_pic("./output/R_" + name + "_" + str(num_segments) + ".png")
 
 for key, image in images.iteritems():
@@ -166,4 +172,4 @@ for key, image in images.iteritems():
         print("===== Num Segs: " + str(num_segments))
         do_em((key, image), num_segments)
 
-do_em(("partb", images["sunrise"]), 20)
+do_em(("partb", images["sunrise"]), 10)
