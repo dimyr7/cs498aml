@@ -9,6 +9,7 @@ import sys
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 import sklearn.mixture
+from sklearn.preprocessing import scale
 np.set_printoptions(threshold=np.nan)
 
 RGB_Range = 255.
@@ -27,6 +28,7 @@ class Image(object):
             self.ysize = temp_img.shape[1]
             self.Pixel_Size = temp_img.shape[2]
             self.data = temp_img.reshape((-1, self.Pixel_Size))/RGB_Range
+            self.data = scale(self.data)
 
     def save_pic(self, name):
         print "saving pic to " + str(name)
@@ -116,15 +118,15 @@ def do_em((name, image), num_segments):
     pis = np.ones(num_segments)/num_segments
     means = rand.rand(num_segments, image.data.shape[1])
     means = np.array([
-        [0.3449614,0.52336887,0.3208887]
-        [0.9849162,0.83266914,0.4076067]
-        [0.1184523,0.03383186,0.8897139]
-        [0.4807179,0.05975474,0.4806317]
-        [0.1769631,0.68263488,0.1888539]
-        [0.7355660,0.02289960,0.1146740]
-        [0.3528862,0.88643099,0.4229427]
-        [0.4365645,0.41412098,0.0391218]
-        [0.6389653,0.12659308,0.8712448]
+        [0.3449614,0.52336887,0.3208887],
+        [0.9849162,0.83266914,0.4076067],
+        [0.1184523,0.03383186,0.8897139],
+        [0.4807179,0.05975474,0.4806317],
+        [0.1769631,0.68263488,0.1888539],
+        [0.7355660,0.02289960,0.1146740],
+        [0.3528862,0.88643099,0.4229427],
+        [0.4365645,0.41412098,0.0391218],
+        [0.6389653,0.12659308,0.8712448],
         [0.1673267,0.63445092,0.7311664]])
     last_Q = np.NINF
     """EM Steps"""
@@ -132,7 +134,7 @@ def do_em((name, image), num_segments):
         print "E step"
         inner = np.zeros((image.data.shape[0], num_segments))
         for j in range(num_segments):
-            dist = image.data-means[i]
+            dist = image.data-means[j]
             inner[:,j] =  (-0.5) * np.sum(np.power(dist, 2),axis=1)
 
         print "Calc wij"
@@ -150,8 +152,9 @@ def do_em((name, image), num_segments):
             bottom = sum(wijs[:,j])
             means[j] = top/bottom
             pis[j] = sum(wijs[:,j])/image.data.shape[0]
-        diff_Q = np.abs(Q - last_Q)
+        diff_Q = Q - last_Q
         print means
+        print "diff_Q: " + str(diff_Q)
         if(diff_Q < stop_criteria):
             break
         else:
@@ -168,4 +171,4 @@ for key, image in images.iteritems():
         print("===== Num Segs: " + str(num_segments))
         do_em((key, image), num_segments)
 
-do_em(("partb", images["sunrise"]), 20)
+do_em(("partb", images["sunrise"]), 10)
