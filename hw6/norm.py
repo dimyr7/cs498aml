@@ -28,8 +28,8 @@ class Image(object):
             self.ysize = temp_img.shape[1]
             self.Pixel_Size = temp_img.shape[2]
             self.data = temp_img.reshape((-1, self.Pixel_Size))/RGB_Range
-            self.orig_mean = np.mean(self.data)
-            self.orig_std = np.std(self.data)
+            self.orig_mean = np.array([np.mean(self.data[:, i]) for i in range(self.data.shape[1])])
+            self.orig_std = np.array([np.std(self.data[:, i]) for i in range(self.data.shape[1])])
             self.data = scale(self.data)
 
     def save_pic(self, name):
