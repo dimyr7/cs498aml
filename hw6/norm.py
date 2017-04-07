@@ -125,19 +125,6 @@ def do_em((name, image), num_segments):
 
     pis = np.ones(num_segments)/num_segments
     means = rand.rand(num_segments, image.data.shape[1])
-    """
-    means = np.array([
-        [0.3449614,0.52336887,0.3208887],
-        [0.9849162,0.83266914,0.4076067],
-        [0.1184523,0.03383186,0.8897139],
-        [0.4807179,0.05975474,0.4806317],
-        [0.1769631,0.68263488,0.1888539],
-        [0.7355660,0.02289960,0.1146740],
-        [0.3528862,0.88643099,0.4229427],
-        [0.4365645,0.41412098,0.0391218],
-        [0.6389653,0.12659308,0.8712448],
-        [0.1673267,0.63445092,0.7311664]])
-    """
     last_Q = np.NINF
     """EM Steps"""
     while(True):
@@ -178,10 +165,17 @@ def do_em((name, image), num_segments):
     pic = new_data.reshape((image.xsize, image.ysize, image.Pixel_Size))
     plt.imsave(fname=path, arr=pic)
 
-for key, image in images.iteritems():
-    print("========= Image: " + key)
-    for num_segments in segments:
-        print("===== Num Segs: " + str(num_segments))
-        do_em((key, image), num_segments)
-
-do_em(("partb", images["sunrise"]), 10)
+part1 = False
+part2 = True
+if(part1):
+    for key, image in images.iteritems():
+        print("========= Image: " + key)
+        for num_segments in segments:
+            print("===== Num Segs: " + str(num_segments))
+            do_em((key, image), num_segments)
+if(part2):
+    do_em(("partb1", images["sunset"]), 20)
+    do_em(("partb2", images["sunset"]), 20)
+    do_em(("partb3", images["sunset"]), 20)
+    do_em(("partb4", images["sunset"]), 20)
+    do_em(("partb5", images["sunset"]), 20)
