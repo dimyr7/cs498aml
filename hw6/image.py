@@ -17,152 +17,75 @@ images = np.array(["fish", "flower", "sunset"], dtype=object)
 segments = np.array([10, 20, 50])
 
 class Image(object):
-    def __init__(self, path=None, orig=None):
-        if(orig != None):
-            self.copy_constructor(orig)
-        elif(path != None):
-            temp_img = misc.imread(path)
+    def __init__(self, path):
+        temp_img = misc.imread(path)
 
-            self.xsize = temp_img.shape[0]
-            self.ysize = temp_img.shape[1]
-            self.Pixel_Size = temp_img.shape[2]
-            self.data = temp_img.reshape((-1, self.Pixel_Size))/RGB_Range
-
-    def save_pic(self, name):
-        print "saving pic to " + str(name)
-        pic = self.data.reshape((self.xsize, self.ysize, self.Pixel_Size))
-        plt.imsave(fname=name, arr=pic)
-    def copy_constructor(self, orig):
-        self.xsize = orig.xsize
-        self.ysize = orig.ysize
-        self.Pixel_Size = orig.Pixel_Size
-        self.data = np.copy(orig.data)
-
-
+        self.xsize = temp_img.shape[0]
+        self.ysize = temp_img.shape[1]
+        self.Pixel_Size = temp_img.shape[2]
+        self.data = temp_img.reshape((-1, self.Pixel_Size))/RGB_Range
+        self.scalar = sklearn.preprocessing.StandardScaler()
+        self.data = self.scalar.fit_transform(self.data)
 
 class NormalTheta(object):
-    def __init__(self, num_segments, x):
+    def __init__(self, num_segments, image_data):
         self.num_segments = num_segments
         """
-        self.mu = np.zeros((num_segments, x.shape[1]))
-        self.pi = np.zeros(num_segments)
-
-        #pi[j] --> probability that the cluster is chosen
-        #mu[j] --> mean center value of given cluster j
-        # given a pixel, what cluster is chosen ?
-
-        kmeans = sklearn.cluster.KMeans(n_clusters = num_segments).fit(x)
-        #determine pi[j]
-        for j in range(num_segments):
-            self.pi[j] = (kmeans.labels_ == j).sum()/float(x.shape[0])
-
-        #determine mu[j]
-        self.mu = kmeans.cluster_centers_
+        pi[j] --> probability that the cluster is chosen
+        mu[j] --> mean center value of given cluster j
         """
-        self.mu = rand.rand(num_segments, x.shape[1])
+        self.mu = rand.rand(num_segments, image_data.shape[1])
         self.pi = np.ones(num_segments)/num_segments
+        self.image_data = image_data
 
-
-
-    def get_d(self, x):
-        print "get_d"
-        d_min = np.zeros(x.shape[0])
-        return d_min
-        d_min[:] = np.NINF
-        for i in range(x.shape[0]):
-            for j in range(self.num_segments):
-                temp_diff = x[i] - self.mu[j]
-                if(temp_diff.dot(temp_diff) > d_min[i]):
-                    d_min[i] = temp_diff.dot(temp_diff)
-        return d_min
-
-
-
-    def get_w(self, x):
+    def get_w(self):
         print "get_w"
-        d = self.get_d(x)
-        w = np.zeros((x.shape[0], self.num_segments))
-        for i in range(x.shape[0]):
+        w = np.zeros((self.image_data.shape[0], self.num_segments))
+        for i in range(self.image_data.shape[0]):
             for j in range(self.num_segments):
-                temp_diff = x[i] - self.mu[j]
-                temp_exponent = -0.5 * (temp_diff.dot(temp_diff)  - d[i])
+                temp_diff = self.image_data[i] - self.mu[j]
+                temp_exponent = -0.5 * temp_diff.dot(temp_diff)
                 w[i,j] = self.pi[j] * np.exp(temp_exponent)
-        for i in range(x.shape[0]):
-            w[i] = w[i]/(w[i].sum())
+        for i in range(self.image_data.shape[0]):
+            w[i] /= w[i].sum()
         return w
+
+    def update_mu_pi(self, w):
+        for j in range(self.num_segments):
+            numerator = sum([self.image_data[i] * w[i,j] for i in range(self.image_data.shape[0])])
+            wij_sum = sum([w[i,j] for i in range(self.image_data.shape[0])])
+            self.mu[j] = numerator / wij_sum
+            self.pi[j] = wij_sum / self.image_data.shape[0]
 
 images = {'flower'   : Image(path="./em_images/flower.png"),
           'fish' : Image(path="./em_images/fish.png"),
           'sunset' : Image(path="./em_images/sunset.png")}
-def show_segments(image,theta, num_segments, path):
-    w = theta.get_w(image.data)
-    assigned_segments = w.argmax(axis=1)
-
-
-    new_image = Image(orig=image)
-    for i in range(image.data.shape[0]):
-        new_image.data[i] = theta.mu[assigned_segments[i]]
-    new_image.save_pic(path)
-
-
 
 def do_em((name, image), num_segments):
     theta = NormalTheta(num_segments, image.data)
-    show_segments(image, theta, num_segments, "output/" + name + "_" + str(num_segments) + "_kmeans.png")
+    w = np.zeros((image.data.shape[0], num_segments))
     for iteration in range(num_iterations):
         print("== Starting Iteration: " + str(iteration))
-        w = theta.get_w(image.data)
+        w = theta.get_w()
+        print "updating mu and pi"
+        theta.update_mu_pi(w)
 
-        print "updating mu"
-        temp_mu = np.zeros((num_segments, image.data.shape[1]))
-        # Update mu
-        for j in range(num_segments):
-            temp_sum = np.zeros(image.data.shape[1])
-            for i in range(image.data.shape[0]):
-                temp_sum += image.data[i] * w[i,j]
-            temp_mu = temp_sum/(w[:, j]).sum()
-            print temp_mu
-            theta.mu[j] = temp_mu
+    new_means = image.scalar.inverse_transform(theta.mu)
+    assigned_segments = w.argmax(axis=1)
+    new_data = np.zeros((image.data.shape[0], image.data.shape[1]))
+    for i in range(image.data.shape[0]):
+        new_data[i] = new_means[assigned_segments[i]]
 
-        print "updating pi"
-        temp_pi = np.zeros(num_segments)
-        for j in range(num_segments):
-            temp_pi[j] = w[:, j].sum()/image.data.shape[0]
-        theta.pi = temp_pi
-        path = "output/" + name + "_" + str(num_segments) + "_" +  str(iteration) + "_" + str(num_iterations) + ".png"
-        show_segments(image, theta, num_segments, path)
-        sys.stdout.flush()
-    exit(1)
+    pic = new_data.reshape((image.xsize, image.ysize, image.Pixel_Size))
+    path = "q2_new_output/" + name + "_" + str(num_segments) + ".png"
+    plt.imsave(fname=path, arr=pic)
 
-num_segments = 10
-good_em_image = images['fish']
-good_em = sklearn.mixture.GaussianMixture(n_components=num_segments).fit(good_em_image.data)
-output = good_em.predict(good_em_image.data)
-new_image = Image(orig=good_em_image)
-for i in range(good_em_image.data.shape[0]):
-    new_image.data[i] = good_em.means_[output[i]]
-path="./output/fish_goodEM.png"
-new_image.save_pic(path)
-"""
-theta = NormalTheta(num_segments, good_em_image.data)
-theta.mu = good_em.means_
-theta.pi = good_em.weights_
-w = theta.get_w(good_em_image.data)
-assigned_segments = w.argmax(axis=1)
-new_image = Image(orig=good_em_image)
-for i in range(good_em_image.data.shape[0]):
-    new_image.data[i] = theta.mu[assigned_segments[i]]
-path="./output/fish_goodEM.png"
-new_image.save_pic(path)
-"""
-
-
-exit(1)
-
+'''
 for key, image in images.iteritems():
     print("========= Image: " + key)
     for num_segments in segments:
         print("===== Num Segs: " + str(num_segments))
         do_em((key, image), num_segments)
+'''
 
-do_em(("partb", images["sunrise"]), 20)
+do_em(("partb", images["fish"]), 20)
