@@ -1,3 +1,7 @@
 charts/*
 c.out
 *jpg
+
+benchmark.py
+*pyc
+q2_new_output/
