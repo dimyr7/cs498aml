@@ -5,6 +5,6 @@ hw3/cifar-10-batches-py/*
 
 */.Rdata
 */.Rhistory
-
+*png
 template.Rmd
 
