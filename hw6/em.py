@@ -27,31 +27,7 @@ class NormalTheta(object):
         self.pi = np.ones(num_segments)/num_segments
         self.image_data = image_data
 
-    def get_xnorm(self):
-        x_norm = npla.norm(self.image_data, axis=1)
-        x_norm = np.power(x_norm,2)
-        x_norm = x_norm.reshape((1,-1))
-        x_norm = x_norm.repeat( self.num_segments, axis=0).T
-        return x_norm
-    def get_munorm(self):
-        """Something wrong"""
-        mu_norm = npla.norm(self.mu , axis=1)
-        mu_norm = np.power(mu_norm, 2)
-        mu_norm = mu_norm.reshape((1,-1))
-        mu_norm = mu_norm.repeat(self.image_data.shape[0], axis=0)
-        return mu_norm
-    def get_d(self):
-        d_all = dist.cdist(self.image_data, self.mu)
-        d_min = d_all.min(axis=1)
-        return d_min
     def get_w(self):
-        """
-        x_norm = self.get_xnorm()
-        y_norm = self.get_munorm()
-        x_mu_dot = -2 * np.dot(self.image_data, self.mu.T)
-        dmin = self.get_d()
-        exit(1)
-        """
         diff = dist.cdist(self.image_data, self.mu)
         dmin = diff.min(axis=1).reshape((1,-1)).repeat(self.num_segments, axis=0).T
         ret = np.exp(-0.5 * (np.power(diff,2) - np.power(dmin,2)))
