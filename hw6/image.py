@@ -23,21 +23,19 @@ def do_em((name, image), num_segments):
         w = theta.get_w()
         theta.update_mu_pi(w)
 
-    new_means = image.scalar.inverse_transform(theta.mu)
+    new_means = image.scalar.inverse_transform(theta.mu/10.)
     assigned_segments = w.argmax(axis=1)
     new_data = np.zeros((image.data.shape[0], image.data.shape[1]))
     for i in range(image.data.shape[0]):
         new_data[i] = new_means[assigned_segments[i]]
 
     pic = new_data.reshape((image.xsize, image.ysize, image.Pixel_Size))
-    path = "q2_new_output/" + name + "_" + str(num_segments) + ".png"
+    path = "q2_output/" + name + "_" + str(num_segments) + ".png"
     plt.imsave(fname=path, arr=pic)
-
 for key, image in images.iteritems():
     print("========= Image: " + key)
     for num_segments in segments:
         print("===== Num Segs: " + str(num_segments))
         do_em((key, image), num_segments)
-
 for i in range(5):
     do_em(("partb" + str(i), images["sunset"]), 20)
