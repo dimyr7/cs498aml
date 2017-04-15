@@ -4,14 +4,14 @@ import numpy.random as nprand
 import scipy.misc as spmisc
 from mnist import MNIST
 from threading import Thread, Lock
-from Queue import Queue
+from Queue import Queue, Empty
 from time import sleep
 from matplotlib.pyplot import plot, show
 np.set_printoptions(threshold=np.nan)
 firstx = 500
-noise_pct= 0.02
+noise_pct = 0.02
 width = 28
-theta_hh = 0.2
+c_values = np.arange(-1, 1.1, 0.1)
 theta_hx = 2.
 
 def display(data):
@@ -22,6 +22,7 @@ def display(data):
             else:
                 print " ",
         print ""
+
 def save_image(name, data):
     spmisc.imsave(name, (data+1.)/2.)
 
@@ -47,7 +48,7 @@ noise = (nprand.rand(bin_images.shape[0], bin_images.shape[1], bin_images.shape[
 
 noisy_images = np.multiply(bin_images, noise)
 
-def get_numerator(pi_old, noisy_image, (x,y)):
+def get_numerator(pi_old, noisy_image, (x,y), theta_hh):
     num_exp_sum = 0.
     if(x > 0):
         num_exp_sum += (theta_hh * (2.*pi_old[x-1,y]-1.) + theta_hx * noisy_image[x-1,y])
@@ -58,7 +59,7 @@ def get_numerator(pi_old, noisy_image, (x,y)):
     if(y < width-1):
         num_exp_sum += (theta_hh * (2.*pi_old[x,y+1]-1.) + theta_hx * noisy_image[x,y+1])
     return np.exp(num_exp_sum)
-def get_denomenator(pi_old, noisy_image, (x,y)):
+def get_denomenator(pi_old, noisy_image, (x,y), theta_hh):
     den_exp_sum_left = 0.
     if(x > 0):
         den_exp_sum_left += (theta_hh * (2.*pi_old[x-1,y]-1.) + theta_hx * noisy_image[x-1,y])
@@ -82,28 +83,28 @@ def get_denomenator(pi_old, noisy_image, (x,y)):
 
 
 
-def get_pi_new(pi_old, image):
+def get_pi_new(pi_old, image, c):
     pi_new = np.zeros((width, width))
     for x in range(width):
         for y in range(width):
-            numerator = get_numerator(pi_old, image, (x,y))
-            denominator = get_denomenator(pi_old, image, (x,y))
+            numerator = get_numerator(pi_old, image, (x,y), c)
+            denominator = get_denomenator(pi_old, image, (x,y), c)
             pi_new[x,y]= numerator/denominator
     return pi_new
 
 
-def denoise_image(image):
+def denoise_image(image, c):
     pi_old = np.ones((width, width))/5.
     for iteration in range(10):
-        pi_new = get_pi_new(pi_old, image)
+        pi_new = get_pi_new(pi_old, image, c)
         pi_old = pi_new
     new_image = (pi_new > 0.5) * 2 - 1
     return new_image
 
 lock = Lock()
 q = Queue()
-true_positives = np.zeros(bin_images.shape[0])
-false_positives = np.zeros(bin_images.shape[0])
+true_positives = np.zeros((len(c_values), bin_images.shape[0]))
+false_positives = np.zeros((len(c_values), bin_images.shape[0]))
 
 best_idx = 0.
 best_rate = np.PINF
@@ -123,15 +124,19 @@ def start():
 
     while not q.empty():
         try:
-            image_idx = q.get(block=False)
-        except Queue.Empty:
+            v = q.get(block=False)
+            image_idx = v[0]
+            c_idx = v[1]
+            c = c_values[c_idx]
+        except Empty:
             break
-        denoised_image = denoise_image(noisy_images[image_idx])
+        denoised_image = denoise_image(noisy_images[image_idx], c)
         t, f = get_true_false_positive_rate(bin_images[image_idx], noisy_images[image_idx], denoised_image)
         lock.acquire()
-        true_positives[image_idx] = t
-        false_positives[image_idx] = f
+        true_positives[c_idx, image_idx] = t
+        false_positives[c_idx, image_idx] = f
 
+        # TODO: check if this still works after doing different values of c
         curr_error_rate = np.sum(bin_images[image_idx] != denoised_image)/(width*width)
         if(curr_error_rate < best_rate):
             best_rate = curr_error_rate
@@ -141,12 +146,12 @@ def start():
             worst_rate = curr_error_rate
             worst_idx = image_idx
             worst_denoised = denoised_image
-        print "done with image" + str(image_idx)
+        print "done with image:  %s, c: %s" % (str(image_idx), str(c))
         lock.release()
 
-# for i in range(bin_images.shape[0]):
-for i in range(10):
-    q.put(i)
+for c in range(len(c_values)):
+    for i in range(bin_images.shape[0]):
+        q.put((i, c))
 
 num_threads = 10
 
@@ -169,7 +174,22 @@ def plot_rates():
     p = plot(false_positives, true_positives)
     show(p)
 
-plot_rates()
+def get_true_false_positive_avg(false_positives, true_positives):
+    avg_false_positives = np.zeros(false_positives.shape[0])
+    avg_true_positives = np.zeros(false_positives.shape[0])
+
+    for i in range(false_positives.shape[0]):
+        avg_true_positives[i] = np.average(true_positives[i])
+        avg_false_positives[i] = np.average(false_positives[i])
+
+    return avg_true_positives, avg_false_positives
+
+avg_true, avg_false = get_true_false_positive_avg(false_positives, true_positives)
+
+print avg_true
+print avg_false
+
+# plot_rates()
 
 save_image("best_original.png", bin_images[best_idx])
 save_image("best_noisy.png", noisy_images[best_idx])
