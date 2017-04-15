@@ -5,7 +5,7 @@ import scipy.misc as spmisc
 from mnist import MNIST
 np.set_printoptions(threshold=np.nan)
 firstx = 500
-noise_pct= 0.5
+noise_pct= 0.05
 width = 28
 theta_hh = 0.2
 theta_hx = 2.
@@ -23,29 +23,13 @@ def save_image(name, data):
 
 
 def get_true_false_positive_rate(original, noisy, denoise):
-    # o -> original, n -> new, d -> denoise
-    def change(i, j):
-        return noisy[i,j] != denoise[i,j]
+    change  = (noisy != denoise)
+    should  = (original != noisy)
 
-    def should(i, j):
-        return original[i,j] != noisy[i,j]
-
-    true_positive = 0
-    false_positive = 0
-
-    for i in range(original.shape[0]):
-        for j in range(original.shape[1]):
-            if change(i,j) == should(i,j):
-                true_positive += 1
-            elif change is True and should is False:
-                false_positive += 1
-
-    total_change = true_positive + false_positive
-
-    if total_change == 0:
-        return 0,0
-
-    return true_positive / float(total_change), false_positive / float(total_change)
+    true_positive  = np.sum(np.logical_and(change, should))/float(np.sum(should))
+    false_positive = np.sum(np.logical_and(change, np.logical_not(should)))/float(np.sum(np.logical_not(should)))
+    print (true_positive, false_positive)
+    exit(1)
 
 
 
@@ -114,9 +98,24 @@ def denoise_image(image):
     new_image = (pi_new > 0.5) * 2 - 1
     return new_image
 
+orig = bin_images[0]
+noisy = noisy_images[0]
+new = denoise_image(noisy)
+
+display(orig)
+print "============="
+display(noisy)
+print "============="
+display(new)
+get_true_false_positive_rate(orig, noisy, new)
+exit(1)
+
+
+
 denoise_images = np.zeros(noisy_images.shape)
 for image_idx in range(noisy_images.shape[0]):
     denoise_images[image_idx] = denoise_image(noisy_images[image_idx])
+
 
 rates = np.array((noisy_images.shape[0]))
 for image_idx in range(noisy_images.shape[0]):
