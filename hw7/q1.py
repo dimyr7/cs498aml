@@ -9,7 +9,7 @@ from time import sleep
 from matplotlib.pyplot import plot, show
 np.set_printoptions(threshold=np.nan)
 firstx = 500
-noise_pct= 0.05
+noise_pct= 0.02
 width = 28
 theta_hh = 0.2
 theta_hx = 2.
@@ -105,7 +105,22 @@ q = Queue()
 true_positives = np.zeros(bin_images.shape[0])
 false_positives = np.zeros(bin_images.shape[0])
 
+best_idx = 0.
+best_rate = np.PINF
+best_denoised = np.zeros((width, width))
+worst_idx = 0.
+worst_rate = np.NINF
+worst_denoised = np.zeros((width, width))
+
 def start():
+    global best_rate
+    global best_denoised
+    global best_idx
+
+    global worst_rate
+    global worst_denoised
+    global worst_idx
+
     while not q.empty():
         try:
             image_idx = q.get(block=False)
@@ -116,6 +131,16 @@ def start():
         lock.acquire()
         true_positives[image_idx] = t
         false_positives[image_idx] = f
+
+        curr_error_rate = np.sum(bin_images[image_idx] != denoised_image)/(width*width)
+        if(curr_error_rate < best_rate):
+            best_rate = curr_error_rate
+            best_idx = image_idx
+            best_denoised = denoised_image
+        elif(curr_error_rate > worst_rate):
+            worst_rate = curr_error_rate
+            worst_idx = image_idx
+            worst_denoised = denoised_image
         print "done with image" + str(image_idx)
         lock.release()
 
@@ -146,6 +171,13 @@ def plot_rates():
 
 plot_rates()
 
+save_image("best_original.png", bin_images[best_idx])
+save_image("best_noisy.png", noisy_images[best_idx])
+save_image("best_denoised.png", best_denoised)
+
+save_image("worst_original.png", bin_images[worst_idx])
+save_image("worst_noisy.png", noisy_images[worst_idx])
+save_image("worst_denoised.png", worst_denoised)
 '''
 orig = bin_images[0]
 noisy = noisy_images[0]
