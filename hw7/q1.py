@@ -1,10 +1,11 @@
 #! env python
 import numpy as np
 import numpy.random as nprand
+import scipy.misc as spmisc
 from mnist import MNIST
 np.set_printoptions(threshold=np.nan)
 firstx = 500
-noise_pct= 0.02
+noise_pct= 0.1
 width = 28
 theta_hh = 0.2
 theta_hx = 2.
@@ -17,6 +18,9 @@ def display(data):
             else:
                 print " ",
         print ""
+def save_image(name, data):
+    spmisc.imsave(name, (data+1.)/2.)
+
 
 
 mndata = MNIST('./data')
@@ -78,15 +82,12 @@ def get_pi_new(pi_old, image):
 
 def denoise_image(image):
     pi_old = np.ones((width, width))/5.
-    for iteration in range(10):
+    for iteration in range(1):
         pi_new = get_pi_new(pi_old, image)
         pi_old = pi_new
     print pi_new[0]
     new_image = (pi_new > 0.5)+0.
     return new_image
-
-new_image = denoise_image(noisy_images[0])
-exit(1)
 
 for image_idx in range(noisy_images.shape[0]):
     denoise_image(noisy_images[image_idx])
