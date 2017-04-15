@@ -13,7 +13,7 @@ def display(data):
     for i in range(width):
         for j in range(width):
             if(data[i,j] == 1.):
-                print unichr(0x2588),
+                print "@",
             else:
                 print " ",
         print ""
@@ -21,15 +21,14 @@ def display(data):
 
 mndata = MNIST('./data')
 images, labels = mndata.load_training()
-images = np.array(images[:firstx])
+images = np.array(images[:firstx]).reshape(-1, width,width)
 labels = np.array(images[:firstx])
 bin_images = (images > 255./2)*2-1
 
 
-noise = (nprand.rand(bin_images.shape[0], bin_images.shape[1]) > noise_pct) * 2 - 1
+noise = (nprand.rand(bin_images.shape[0], bin_images.shape[1], bin_images.shape[2]) > noise_pct) * 2 - 1
 
 noisy_images = np.multiply(bin_images, noise)
-noisy_images = noisy_images.reshape((-1, width, width))
 
 
 def get_numerator(pi_old, noisy_image, (x,y)):
@@ -87,11 +86,6 @@ def denoise_image(image):
     return new_image
 
 new_image = denoise_image(noisy_images[0])
-display(bin_images[0].reshape(width, width))
-print "====="
-display(noisy_images[0])
-print "======"
-display(new_image)
 exit(1)
 
 for image_idx in range(noisy_images.shape[0]):
