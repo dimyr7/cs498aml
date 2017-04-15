@@ -5,7 +5,7 @@ import scipy.misc as spmisc
 from mnist import MNIST
 np.set_printoptions(threshold=np.nan)
 firstx = 500
-noise_pct= 0.1
+noise_pct= 0.5
 width = 28
 theta_hh = 0.2
 theta_hx = 2.
@@ -108,12 +108,17 @@ def get_pi_new(pi_old, image):
 
 def denoise_image(image):
     pi_old = np.ones((width, width))/5.
-    for iteration in range(1):
+    for iteration in range(10):
         pi_new = get_pi_new(pi_old, image)
         pi_old = pi_new
-    print pi_new[0]
     new_image = (pi_new > 0.5) * 2 - 1
     return new_image
 
+denoise_images = np.zeros(noisy_images.shape)
+for image_idx in range(noisy_images.shape[0]):
+    denoise_images[image_idx] = denoise_image(noisy_images[image_idx])
+
+rates = np.array((noisy_images.shape[0]))
 for image_idx in range(noisy_images.shape[0]):
     print get_true_false_positive_rate(bin_images[image_idx], noisy_images[image_idx], denoise_images[image_idx])
+
