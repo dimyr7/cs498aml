@@ -22,6 +22,32 @@ def save_image(name, data):
     spmisc.imsave(name, (data+1.)/2.)
 
 
+def get_true_false_positive_rate(original, noisy, denoise):
+    # o -> original, n -> new, d -> denoise
+    def change(i, j):
+        return noisy[i,j] != denoise[i,j]
+
+    def should(i, j):
+        return original[i,j] != noisy[i,j]
+
+    true_positive = 0
+    false_positive = 0
+
+    for i in range(original.shape[0]):
+        for j in range(original.shape[1]):
+            if change(i,j) == should(i,j):
+                true_positive += 1
+            elif change is True and should is False:
+                false_positive += 1
+
+    total_change = true_positive + false_positive
+
+    if total_change == 0:
+        return 0,0
+
+    return true_positive / float(total_change), false_positive / float(total_change)
+
+
 
 mndata = MNIST('./data')
 images, labels = mndata.load_training()
@@ -86,8 +112,8 @@ def denoise_image(image):
         pi_new = get_pi_new(pi_old, image)
         pi_old = pi_new
     print pi_new[0]
-    new_image = (pi_new > 0.5)+0.
+    new_image = (pi_new > 0.5) * 2 - 1
     return new_image
 
 for image_idx in range(noisy_images.shape[0]):
-    denoise_image(noisy_images[image_idx])
+    print get_true_false_positive_rate(bin_images[image_idx], noisy_images[image_idx], denoise_images[image_idx])
