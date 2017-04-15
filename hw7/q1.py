@@ -38,6 +38,9 @@ def get_true_false_positive_rate(original, noisy, denoise):
 
     total_change = true_positive + false_positive
 
+    if total_change == 0:
+        return 0,0
+
     return true_positive / float(total_change), false_positive / float(total_change)
 
 
