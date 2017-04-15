@@ -8,7 +8,7 @@ from Queue import Queue
 from time import sleep
 np.set_printoptions(threshold=np.nan)
 firstx = 500
-noise_pct= 0.05
+noise_pct= 0.02
 width = 28
 theta_hh = 0.2
 theta_hx = 2.
@@ -103,15 +103,40 @@ lock = Lock()
 q = Queue()
 rates = []
 
+best_idx = 0.
+best_rate = np.PINF
+best_denoised = np.zeros((width, width))
+worst_idx = 0.
+worst_rate = np.NINF
+worst_denoised = np.zeros((width, width))
+
 def start():
+    global best_rate
+    global best_denoised
+    global best_idx
+
+    global worst_rate
+    global worst_denoised
+    global worst_idx
+
     while not q.empty():
         try:
             image_idx = q.get(block=False)
         except Queue.Empty:
             break
         denoised_image = denoise_image(noisy_images[image_idx])
+
         rate = get_true_false_positive_rate(bin_images[image_idx], noisy_images[image_idx], denoised_image)
         lock.acquire()
+        curr_error_rate = np.sum(bin_images[image_idx] != denoised_image)/(width*width)
+        if(curr_error_rate < best_rate):
+            best_rate = curr_error_rate
+            best_idx = image_idx
+            best_denoised = denoised_image
+        elif(curr_error_rate > worst_rate):
+            worst_rate = curr_error_rate
+            worst_idx = image_idx
+            worst_denoised = denoised_image
         rates.append(rate)
         print "done with image" + str(image_idx)
         lock.release()
@@ -129,8 +154,13 @@ for i in range(num_threads):
 while not q.empty():
     sleep(1)
 
-print rates
+save_image("best_original.png", bin_images[best_idx])
+save_image("best_noisy.png", noisy_images[best_idx])
+save_image("best_denoised.png", best_denoised)
 
+save_image("worst_original.png", bin_images[worst_idx])
+save_image("worst_noisy.png", noisy_images[worst_idx])
+save_image("worst_denoised.png", worst_denoised)
 '''
 orig = bin_images[0]
 noisy = noisy_images[0]
