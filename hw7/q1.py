@@ -6,6 +6,7 @@ from mnist import MNIST
 from threading import Thread, Lock
 from Queue import Queue
 from time import sleep
+from matplotlib.pyplot import plot, show
 np.set_printoptions(threshold=np.nan)
 firstx = 500
 noise_pct= 0.05
@@ -101,7 +102,8 @@ def denoise_image(image):
 
 lock = Lock()
 q = Queue()
-rates = []
+true_positives = np.zeros(bin_images.shape[0])
+false_positives = np.zeros(bin_images.shape[0])
 
 def start():
     while not q.empty():
@@ -110,13 +112,15 @@ def start():
         except Queue.Empty:
             break
         denoised_image = denoise_image(noisy_images[image_idx])
-        rate = get_true_false_positive_rate(bin_images[image_idx], noisy_images[image_idx], denoised_image)
+        t, f = get_true_false_positive_rate(bin_images[image_idx], noisy_images[image_idx], denoised_image)
         lock.acquire()
-        rates.append(rate)
+        true_positives[image_idx] = t
+        false_positives[image_idx] = f
         print "done with image" + str(image_idx)
         lock.release()
 
-for i in range(bin_images.shape[0]):
+# for i in range(bin_images.shape[0]):
+for i in range(10):
     q.put(i)
 
 num_threads = 10
@@ -129,7 +133,18 @@ for i in range(num_threads):
 while not q.empty():
     sleep(1)
 
-print rates
+def plot_rates():
+    global false_positives
+    global true_positives
+    ind = false_positives.argsort()
+    false_positives = false_positives[ind[::1]]
+    true_positives = true_positives[ind[::1]]
+    print "false positives: " + str(false_positives)
+    print "true positives: " + str(true_positives)
+    p = plot(false_positives, true_positives)
+    show(p)
+
+plot_rates()
 
 '''
 orig = bin_images[0]
