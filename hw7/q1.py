@@ -2,6 +2,9 @@
 import numpy as np
 import numpy.random as nprand
 from mnist import MNIST
+from threading import Thread, Lock
+from Queue import Queue
+from time import sleep
 np.set_printoptions(threshold=np.nan)
 firstx = 500
 noise_pct= 0.5
@@ -56,7 +59,6 @@ noise = (nprand.rand(bin_images.shape[0], bin_images.shape[1], bin_images.shape[
 
 noisy_images = np.multiply(bin_images, noise)
 
-
 def get_numerator(pi_old, noisy_image, (x,y)):
     num_exp_sum = 0.
     if(x > 0):
@@ -110,11 +112,45 @@ def denoise_image(image):
     new_image = (pi_new > 0.5) * 2 - 1
     return new_image
 
+lock = Lock()
+q = Queue()
+rates = []
+
+def start():
+    while not q.empty():
+        try:
+            image_idx = q.get(block=False)
+        except Queue.Empty:
+            break
+        denoised_image = denoise_image(noisy_images[image_idx])
+        rate = get_true_false_positive_rate(bin_images[image_idx], noisy_images[image_idx], denoised_image)
+        lock.acquire()
+        rates.append(rate)
+        print "done with image" + str(image_idx)
+        lock.release()
+
+for i in range(bin_images.shape[0]):
+    q.put(i)
+
+num_threads = 10
+
+for i in range(num_threads):
+    t = Thread(target=start)
+    t.daemon = True
+    t.run()
+
+while not q.empty():
+    sleep(1)
+
+print rates
+
+'''
 denoise_images = np.zeros(noisy_images.shape)
-for image_idx in range(noisy_images.shape[0]):
-    denoise_images[image_idx] = denoise_image(noisy_images[image_idx])
+for image_idx in range(10):
+    denoise_images[image_idx] =
 
 rates = np.array((noisy_images.shape[0]))
-for image_idx in range(noisy_images.shape[0]):
+for image_idx in range(10):
     print get_true_false_positive_rate(bin_images[image_idx], noisy_images[image_idx], denoise_images[image_idx])
+'''
 
