@@ -30,14 +30,6 @@ def get_true_false_positive_rate(original, noisy, denoise):
     false_positive = np.sum(np.logical_and(change, np.logical_not(should)))/float(np.sum(np.logical_not(should)))
     return true_positive, false_positive
 def start():
-    global best_ra
-    global best_denoised
-    global best_idx
-
-    global worst_rate
-    global worst_denoised
-    global worst_idx
-
     while not q.empty():
         try:
             image_idx, c_idx = q.get(block=False)
