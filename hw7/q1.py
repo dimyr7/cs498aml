@@ -153,7 +153,7 @@ for c in range(len(c_values)):
     for i in range(bin_images.shape[0]):
         q.put((i, c))
 
-num_threads = 10
+num_threads = 20
 
 for i in range(num_threads):
     t = Thread(target=start)
@@ -189,6 +189,9 @@ avg_true, avg_false = get_true_false_positive_avg(false_positives, true_positive
 print avg_true
 print avg_false
 
+p = plot(avg_false, avg_true, marker="o")
+show(p)
+
 # plot_rates()
 
 save_image("best_original.png", bin_images[best_idx])
@@ -198,28 +201,3 @@ save_image("best_denoised.png", best_denoised)
 save_image("worst_original.png", bin_images[worst_idx])
 save_image("worst_noisy.png", noisy_images[worst_idx])
 save_image("worst_denoised.png", worst_denoised)
-'''
-orig = bin_images[0]
-noisy = noisy_images[0]
-new = denoise_image(noisy)
-
-display(orig)
-print "============="
-display(noisy)
-print "============="
-display(new)
-get_true_false_positive_rate(orig, noisy, new)
-exit(1)
-
-
-
-denoise_images = np.zeros(noisy_images.shape)
-for image_idx in range(10):
-    denoise_images[image_idx] =
-
-
-rates = np.array((noisy_images.shape[0]))
-for image_idx in range(10):
-    print get_true_false_positive_rate(bin_images[image_idx], noisy_images[image_idx], denoise_images[image_idx])
-'''
-
