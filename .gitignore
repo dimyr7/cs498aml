@@ -6,4 +6,4 @@ hw3/cifar-10-batches-py/*
 */.Rdata
 */.Rhistory
 template.Rmd
-
+*pyc

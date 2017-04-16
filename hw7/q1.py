@@ -6,26 +6,21 @@ from mnist import MNIST
 from threading import Thread, Lock
 from Queue import Queue, Empty
 from time import sleep
-from matplotlib.pyplot import plot, show
+import matplotlib as mpl
+mpl.use('Agg')
+import matplotlib.pyplot as plt
+
+import boltzmann
 np.set_printoptions(threshold=np.nan)
 firstx = 500
 noise_pct = 0.02
 width = 28
-c_values = np.arange(-1, 1.1, 0.1)
+c_values = np.arange(-1, 1.1, 0.4)
+c_values[len(c_values)/2] = 0.
 theta_hx = 2.
-
-def display(data):
-    for i in range(width):
-        for j in range(width):
-            if(data[i,j] == 1.):
-                print "@",
-            else:
-                print " ",
-        print ""
 
 def save_image(name, data):
     spmisc.imsave(name, (data+1.)/2.)
-
 
 def get_true_false_positive_rate(original, noisy, denoise):
     change  = (noisy != denoise)
@@ -34,87 +29,8 @@ def get_true_false_positive_rate(original, noisy, denoise):
     true_positive  = np.sum(np.logical_and(change, should))/float(np.sum(should))
     false_positive = np.sum(np.logical_and(change, np.logical_not(should)))/float(np.sum(np.logical_not(should)))
     return true_positive, false_positive
-
-
-
-mndata = MNIST('./data')
-images, labels = mndata.load_training()
-images = np.array(images[:firstx]).reshape(-1, width,width)
-labels = np.array(images[:firstx])
-bin_images = (images > 255./2)*2-1
-
-
-noise = (nprand.rand(bin_images.shape[0], bin_images.shape[1], bin_images.shape[2]) > noise_pct) * 2 - 1
-
-noisy_images = np.multiply(bin_images, noise)
-
-def get_numerator(pi_old, noisy_image, (x,y), theta_hh):
-    num_exp_sum = 0.
-    if(x > 0):
-        num_exp_sum += (theta_hh * (2.*pi_old[x-1,y]-1.) + theta_hx * noisy_image[x-1,y])
-    if(x < width-1):
-        num_exp_sum += (theta_hh * (2.*pi_old[x+1,y]-1.) + theta_hx * noisy_image[x+1,y])
-    if(y > 0):
-        num_exp_sum += (theta_hh * (2.*pi_old[x,y-1]-1.) + theta_hx * noisy_image[x,y-1])
-    if(y < width-1):
-        num_exp_sum += (theta_hh * (2.*pi_old[x,y+1]-1.) + theta_hx * noisy_image[x,y+1])
-    return np.exp(num_exp_sum)
-def get_denomenator(pi_old, noisy_image, (x,y), theta_hh):
-    den_exp_sum_left = 0.
-    if(x > 0):
-        den_exp_sum_left += (theta_hh * (2.*pi_old[x-1,y]-1.) + theta_hx * noisy_image[x-1,y])
-    if(x < width-1):
-        den_exp_sum_left += (theta_hh * (2.*pi_old[x+1,y]-1.) + theta_hx * noisy_image[x+1,y])
-    if(y > 0):
-        den_exp_sum_left += (theta_hh * (2.*pi_old[x,y-1]-1.) + theta_hx * noisy_image[x,y-1])
-    if(y < width-1):
-        den_exp_sum_left += (theta_hh * (2.*pi_old[x,y+1]-1.) + theta_hx * noisy_image[x,y+1])
-
-    den_exp_sum_right = 0.
-    if(x > 0):
-        den_exp_sum_right += -1. * (theta_hh * (2.*pi_old[x-1,y]-1.) + theta_hx * noisy_image[x-1,y])
-    if(x < width-1):
-        den_exp_sum_right += -1. * (theta_hh * (2.*pi_old[x+1,y]-1.) + theta_hx * noisy_image[x+1,y])
-    if(y > 0):
-        den_exp_sum_right += -1. * (theta_hh * (2.*pi_old[x,y-1]-1.) + theta_hx * noisy_image[x,y-1])
-    if(y < width-1):
-        den_exp_sum_right += -1. * (theta_hh * (2.*pi_old[x,y+1]-1.) + theta_hx * noisy_image[x,y+1])
-    return np.exp(den_exp_sum_left) + np.exp(den_exp_sum_right)
-
-
-
-def get_pi_new(pi_old, image, c):
-    pi_new = np.zeros((width, width))
-    for x in range(width):
-        for y in range(width):
-            numerator = get_numerator(pi_old, image, (x,y), c)
-            denominator = get_denomenator(pi_old, image, (x,y), c)
-            pi_new[x,y]= numerator/denominator
-    return pi_new
-
-
-def denoise_image(image, c):
-    pi_old = np.ones((width, width))/5.
-    for iteration in range(10):
-        pi_new = get_pi_new(pi_old, image, c)
-        pi_old = pi_new
-    new_image = (pi_new > 0.5) * 2 - 1
-    return new_image
-
-lock = Lock()
-q = Queue()
-true_positives = np.zeros((len(c_values), bin_images.shape[0]))
-false_positives = np.zeros((len(c_values), bin_images.shape[0]))
-
-best_idx = 0.
-best_rate = np.PINF
-best_denoised = np.zeros((width, width))
-worst_idx = 0.
-worst_rate = np.NINF
-worst_denoised = np.zeros((width, width))
-
 def start():
-    global best_rate
+    global best_ra
     global best_denoised
     global best_idx
 
@@ -124,33 +40,46 @@ def start():
 
     while not q.empty():
         try:
-            v = q.get(block=False)
-            image_idx = v[0]
-            c_idx = v[1]
-            c = c_values[c_idx]
+            image_idx, c_idx = q.get(block=False)
+            orig_image = bin_images[image_idx]
+            noisy_image = noisy_images[image_idx]
+            theta_hh = c_values[c_idx]
         except Empty:
             break
-        denoised_image = denoise_image(noisy_images[image_idx], c)
-        t, f = get_true_false_positive_rate(bin_images[image_idx], noisy_images[image_idx], denoised_image)
+        machine = boltzmann.Boltzmann(width, theta_hh, theta_hx)
+        denoised_image = machine.denoise_image(noisy_image)
+        denoised_images[c_idx, image_idx] = denoised_image
+        tp_rate, fp_rate = get_true_false_positive_rate(orig_image, noisy_image, denoised_image)
+
+
         lock.acquire()
-        true_positives[c_idx, image_idx] = t
-        false_positives[c_idx, image_idx] = f
+        true_positives[c_idx, image_idx] = tp_rate
+        false_positives[c_idx, image_idx] = fp_rate
 
         # TODO: check if this still works after doing different values of c
-        curr_error_rate = np.sum(bin_images[image_idx] != denoised_image)/(width*width)
-        if(curr_error_rate < best_rate):
-            best_rate = curr_error_rate
-            best_idx = image_idx
-            best_denoised = denoised_image
-        elif(curr_error_rate > worst_rate):
-            worst_rate = curr_error_rate
-            worst_idx = image_idx
-            worst_denoised = denoised_image
-        print "done with image:  %s, c: %s" % (str(image_idx), str(c))
+        pixels_correct[c_idx, image_idx] = np.sum(orig_image == denoised_image)
+        if(image_idx%25 == 0):
+            print "done with image:  %s, theta_hh: %s" % (str(image_idx), str(theta_hh))
         lock.release()
 
+mndata = MNIST('./data')
+images, labels = mndata.load_training()
+images = np.array(images[:firstx]).reshape(-1, width,width)
+labels = np.array(images[:firstx])
+bin_images = (images > 255./2)*2-1
+
+
+noise = (nprand.rand(bin_images.shape[0], bin_images.shape[1], bin_images.shape[2]) > noise_pct) * 2 - 1
+noisy_images = np.multiply(bin_images, noise)
+denoised_images = np.zeros(c_values.shape + noisy_images.shape)
+lock = Lock()
+q = Queue()
+true_positives = np.zeros((len(c_values), firstx))
+false_positives = np.zeros((len(c_values), firstx))
+pixels_correct = np.zeros((len(c_values), firstx))
+
 for c in range(len(c_values)):
-    for i in range(bin_images.shape[0]):
+    for i in range(firstx):
         q.put((i, c))
 
 num_threads = 20
@@ -162,6 +91,28 @@ for i in range(num_threads):
 
 while not q.empty():
     sleep(1)
+
+best_idx = pixels_correct.argmax(axis=1)
+worst_idx = pixels_correct.argmin(axis=1)
+for i in range(len(c_values)):
+    save_image("output/images/" + str(c_values[i])+ "_best_orig.png", bin_images[best_idx[i]])
+    save_image("output/images/" + str(c_values[i])+ "_best_noisy.png", noisy_images[best_idx[i]])
+    save_image("output/images/" + str(c_values[i])+ "_best_denoise.png", denoised_images[i, best_idx[i]])
+
+    save_image("output/images/" + str(c_values[i])+ "_worst_orig.png", bin_images[worst_idx[i]])
+    save_image("output/images/" + str(c_values[i])+ "_worst_noisy.png", noisy_images[worst_idx[i]])
+    save_image("output/images/" + str(c_values[i])+ "_worst_denoise.png", denoised_images[i, worst_idx[i]])
+
+pixels_correct = pixels_correct/float(width*width)
+pixels_cirrect_avg = np.average(pixels_correct, axis=1)
+plt.figure()
+plt.title("Accuracy as a function of $\\theta(H_i,H_j)$")
+plt.xlabel("$\\theta(H_i,H_j)$")
+plt.ylabel("Average numver of pixels correct across the entire dataset")
+plt.plot(c_values, pixels_cirrect_avg, "b.")
+plt.savefig("output/accuracy.png")
+
+
 
 def plot_rates():
     global false_positives
@@ -184,20 +135,22 @@ def get_true_false_positive_avg(false_positives, true_positives):
 
     return avg_true_positives, avg_false_positives
 
-avg_true, avg_false = get_true_false_positive_avg(false_positives, true_positives)
+avg_tp, avg_fp= get_true_false_positive_avg(false_positives, true_positives)
 
-print avg_true
-print avg_false
+plt.figure()
+plt.title("Average rates as a function of $\\theta(H_i,H_k)$")
+plt.xlabel("$\\theta(H_i,H_j)$")
+plt.ylabel("Percent of all pixels")
+plt.plot(c_values, avg_tp, "b.", label="true-positive")
+plt.plot(c_values, avg_fp, "g.", label="false-positive")
+plt.legend(loc=0, borderaxespad=0.)
+plt.savefig("output/TP_FP_rates.png")
 
-p = plot(avg_false, avg_true, marker="o")
-show(p)
+plt.figure()
+plt.title("ROC")
+plt.xlabel("False Positive")
+plt.ylabel("True Positive");
+plt.plot(avg_fp, avg_tp,  "r.")
+plt.savefig("output/ROC.png")
 
 # plot_rates()
-
-save_image("best_original.png", bin_images[best_idx])
-save_image("best_noisy.png", noisy_images[best_idx])
-save_image("best_denoised.png", best_denoised)
-
-save_image("worst_original.png", bin_images[worst_idx])
-save_image("worst_noisy.png", noisy_images[worst_idx])
-save_image("worst_denoised.png", worst_denoised)
