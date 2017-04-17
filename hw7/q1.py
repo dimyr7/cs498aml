@@ -16,7 +16,6 @@ firstx = 500
 noise_pct = 0.02
 width = 28
 c_values = np.arange(-1, 1.1, 0.4)
-c_values[len(c_values)/2] = 0.
 theta_hx = 2.
 
 def save_image(name, data):
