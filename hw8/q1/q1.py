@@ -144,8 +144,8 @@ def main(_):
     tf.summary.scalar('accuracy', accuracy)
     merged_summary = tf.summary.merge_all()
     with tf.Session() as sess:
-        train_writer = tf.summary.FileWriter('/tmp/mnist_demo/train', sess.graph)
-        test_writer = tf.summary.FileWriter('/tmp/mnist_demo/test', sess.graph)
+        train_writer = tf.summary.FileWriter('./board/train', sess.graph)
+        test_writer = tf.summary.FileWriter('./board/test', sess.graph)
         sess.run(tf.global_variables_initializer())
         for i in range(2000):
             batch = mnist.train.next_batch(50)
