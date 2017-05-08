@@ -45,15 +45,12 @@ import cifar10
 
 FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_string('train_dir', '/tmp/cifar10_train',
-                           """Directory where to write event logs """
-                           """and checkpoint.""")
-tf.app.flags.DEFINE_integer('max_steps', 1000000,
-                            """Number of batches to run.""")
-tf.app.flags.DEFINE_boolean('log_device_placement', False,
-                            """Whether to log device placement.""")
-tf.app.flags.DEFINE_integer('log_frequency', 10,
-                            """How often to log results to the console.""")
+tf.app.flags.DEFINE_string('train_dir', '/tmp/cifar10_train', """Directory where to write event logs and checkpoint.""")
+tf.app.flags.DEFINE_string('train_board', './board/train', """Directory where to write accuracy""")
+tf.app.flags.DEFINE_integer('max_steps', 1000000, """Number of batches to run.""")
+tf.app.flags.DEFINE_boolean('log_device_placement', False, """Whether to log device placement.""")
+tf.app.flags.DEFINE_integer('log_frequency_console', 10, """How often to log results to the console.""")
+tf.app.flags.DEFINE_integer('log_frequency_board', 100, """How ofthen to log results to TensorBoard.""")
 
 
 def train():
@@ -87,19 +84,18 @@ def train():
         return tf.train.SessionRunArgs(loss)  # Asks for loss value.
 
       def after_run(self, run_context, run_values):
-        if self._step % FLAGS.log_frequency == 0:
+        if self._step % FLAGS.log_frequency_console == 0:
           current_time = time.time()
           duration = current_time - self._start_time
           self._start_time = current_time
 
           loss_value = run_values.results
-          examples_per_sec = FLAGS.log_frequency * FLAGS.batch_size / duration
-          sec_per_batch = float(duration / FLAGS.log_frequency)
+          examples_per_sec = FLAGS.log_frequency_console * FLAGS.batch_size / duration
+          sec_per_batch = float(duration / FLAGS.log_frequency_console)
 
-          format_str = ('%s: step %d, loss = %.2f (%.1f examples/sec; %.3f '
-                        'sec/batch)')
-          print (format_str % (datetime.now(), self._step, loss_value,
-                               examples_per_sec, sec_per_batch))
+          format_str = ('%s: step %d, loss = %.2f (%.1f examples/sec; %.3f ' 'sec/batch)')
+          print (format_str % (datetime.now(), self._step, loss_value, examples_per_sec, sec_per_batch))
+
 
     with tf.train.MonitoredTrainingSession(
         checkpoint_dir=FLAGS.train_dir,

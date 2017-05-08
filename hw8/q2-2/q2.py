@@ -13,7 +13,6 @@
 # ==============================================================================
 
 """A deep MNIST classifier using convolutional layers.
-
 See extensive documentation at
 https://www.tensorflow.org/get_started/mnist/pros
 """
@@ -55,28 +54,43 @@ def deepnn(x):
 
   # First convolutional layer - maps one grayscale image to 32 feature maps.
   with tf.name_scope("conv1"):
-    W_conv1 = weight_variable([5, 5, 1, 32])
-    b_conv1 = bias_variable([32])
+    W_conv1 = weight_variable([5, 5, 1, 16])
+    b_conv1 = bias_variable([16])
     h_conv1 = tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1)
-
-    # Pooling layer - downsamples by 2X.
-    h_pool1 = max_pool_2x2(h_conv1)
 
   # Second convolutional layer -- maps 32 feature maps to 64.
   with tf.name_scope("conv2"):
-    W_conv2 = weight_variable([5, 5, 32, 64])
-    b_conv2 = bias_variable([64])
-    h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
+    W_conv2 = weight_variable([5, 5, 16, 16])
+    b_conv2 = bias_variable([16])
+    h_conv2 = tf.nn.relu(conv2d(h_conv1, W_conv2) + b_conv2)
 
-    # Second pooling layer.
-    h_pool2 = max_pool_2x2(h_conv2)
-  with tf.name_scope("fc"):
+  with tf.name_scope("conv3"):
+      W_cov3 = weight_variable([5,5,16,64])
+      b_conv3 = bias_variable([64])
+      h_conv3 = tf.nn.relu(conv2d(h_conv2, W_cov3) + b_conv3)
+
+  with tf.name_scope("conv4"):
+      W_cov4 = weight_variable([5,5,64,64])
+      b_conv4 = bias_variable([64])
+      h_conv4 = tf.nn.relu(conv2d(h_conv3, W_cov4) + b_conv4)
+
+  with tf.name_scope("conv5"):
+      W_cov5 = weight_variable([5,5,64,64])
+      b_conv5 = bias_variable([64])
+      h_conv5 = tf.nn.relu(conv2d(h_conv4, W_cov5) + b_conv5)
+
+  with tf.name_scope("conv6"):
+      W_cov6 = weight_variable([5,5,64,64])
+      b_conv6 = bias_variable([64])
+      h_conv6 = tf.nn.relu(conv2d(h_conv5, W_cov6) + b_conv6)
+
+  with tf.name_scope("fc1"):
     # Fully connected layer 1 -- after 2 round of downsampling, our 28x28 image
     # is down to 7x7x64 feature maps -- maps this to 1024 features.
-    W_fc1 = weight_variable([7 * 7 * 64, 1024])
-    b_fc1 = bias_variable([1024])
+    W_fc1 = weight_variable([4 * 4  * 64, 256])
+    b_fc1 = bias_variable([256])
 
-    h_pool2_flat = tf.reshape(h_pool2, [-1, 7*7*64])
+    h_pool2_flat = tf.reshape(h_conv6, [-1, 4 * 4 * 64])
     h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 
   with tf.name_scope("dropout"):
@@ -86,7 +100,7 @@ def deepnn(x):
     h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
   with tf.name_scope("classify"):
     # Map the 1024 features to 10 classes, one for each digit
-    W_fc2 = weight_variable([1024, 10])
+    W_fc2 = weight_variable([256, 10])
     b_fc2 = bias_variable([10])
 
     y_conv = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
@@ -95,7 +109,7 @@ def deepnn(x):
 
 def conv2d(x, W):
   """conv2d returns a 2d convolution layer with full stride."""
-  return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
+  return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='VALID')
 
 
 def max_pool_2x2(x):

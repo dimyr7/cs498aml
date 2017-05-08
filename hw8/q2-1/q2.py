@@ -146,7 +146,7 @@ def main(_):
         train_writer = tf.summary.FileWriter('./board/train', sess.graph)
         test_writer = tf.summary.FileWriter('./board/test', sess.graph)
         sess.run(tf.global_variables_initializer())
-        for i in range(2000):
+        for i in range(2001):
             batch = mnist.train.next_batch(50)
             if i % 100 == 0:
                 summary, acc = sess.run([merged_summary, accuracy], feed_dict=feed_dict(False))
