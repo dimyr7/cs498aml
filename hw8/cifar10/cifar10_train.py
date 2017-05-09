@@ -45,9 +45,8 @@ import cifar10
 
 FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_string('train_dir', '/tmp/cifar10_train', """Directory where to write event logs and checkpoint.""")
-tf.app.flags.DEFINE_string('train_board', './board/train', """Directory where to write accuracy""")
-tf.app.flags.DEFINE_integer('max_steps', 1000000, """Number of batches to run.""")
+tf.app.flags.DEFINE_string('train_dir', './board/train', """Directory where to write event logs and checkpoint.""")
+tf.app.flags.DEFINE_integer('max_steps', 1000 * 1000, """Number of batches to run.""")
 tf.app.flags.DEFINE_boolean('log_device_placement', False, """Whether to log device placement.""")
 tf.app.flags.DEFINE_integer('log_frequency_console', 10, """How often to log results to the console.""")
 tf.app.flags.DEFINE_integer('log_frequency_board', 100, """How ofthen to log results to TensorBoard.""")
@@ -95,13 +94,16 @@ def train():
 
           format_str = ('%s: step %d, loss = %.2f (%.1f examples/sec; %.3f ' 'sec/batch)')
           print (format_str % (datetime.now(), self._step, loss_value, examples_per_sec, sec_per_batch))
-
+        if self._step % 100 == 0:
+            tf.summary.scalar("Accuracy", 
 
     with tf.train.MonitoredTrainingSession(
         checkpoint_dir=FLAGS.train_dir,
+        save_checkpoint_secs=30,
         hooks=[tf.train.StopAtStepHook(last_step=FLAGS.max_steps),
                tf.train.NanTensorHook(loss),
-               _LoggerHook()],
+               _LoggerHook(),
+               ],
         config=tf.ConfigProto(
             log_device_placement=FLAGS.log_device_placement)) as mon_sess:
       while not mon_sess.should_stop():
