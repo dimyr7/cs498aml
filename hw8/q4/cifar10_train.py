@@ -46,7 +46,7 @@ import cifar10
 FLAGS = tf.app.flags.FLAGS
 
 tf.app.flags.DEFINE_string('train_dir', './board/train', """Directory where to write event logs and checkpoint.""")
-tf.app.flags.DEFINE_integer('max_steps', 20 * 1000, """Number of batches to run.""")
+tf.app.flags.DEFINE_integer('max_steps', 40 * 1000, """Number of batches to run.""")
 tf.app.flags.DEFINE_boolean('log_device_placement', False, """Whether to log device placement.""")
 tf.app.flags.DEFINE_integer('log_frequency_console', 10, """How often to log results to the console.""")
 tf.app.flags.DEFINE_integer('log_frequency_board', 100, """How ofthen to log results to TensorBoard.""")
