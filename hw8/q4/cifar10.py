@@ -233,10 +233,27 @@ def inference(images):
   # pool2
   pool2 = tf.nn.max_pool(norm2, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='SAME', name='pool2')
 
+  with tf.variable_scope('conv3') as scope:
+    kernel = _variable_with_weight_decay('weights',
+                                         shape=[5, 5, 32, 32],
+                                         stddev=5e-2,
+                                         wd=0.0)
+    conv = tf.nn.conv2d(pool2, kernel, [1, 1, 1, 1], padding='SAME')
+    biases = _variable_on_cpu('biases', [32], tf.constant_initializer(0.1))
+    pre_activation = tf.nn.bias_add(conv, biases)
+    conv3 = tf.nn.relu(pre_activation, name=scope.name)
+    _activation_summary(conv3)
+
+  # norm3
+  norm3 = tf.nn.lrn(conv3, 4, bias=1.0, alpha=0.001 / 9.0, beta=0.75, name='norm3')
+  # pool3
+  pool3 = tf.nn.avg_pool(norm3, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='SAME', name='pool3')
+
+
   # local3
   with tf.variable_scope('local3') as scope:
-    # Move everything into depth so we can perform a single matrix multiply.
-    reshape = tf.reshape(pool2, [FLAGS.batch_size, -1])
+    # Move everything into deth so we can perform a single matrix multiply.
+    reshape = tf.reshape(pool3, [FLAGS.batch_size, -1])
     dim = reshape.get_shape()[1].value
     weights = _variable_with_weight_decay('weights', shape=[dim, 384],
                                           stddev=0.04, wd=0.004)
